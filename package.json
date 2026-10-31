@@ -12,7 +12,8 @@
     "whois": "node --env-file=.env --import tsx src/twitch/whois.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "replay": "node --import tsx src/replay.ts"
+    "replay": "node --import tsx src/replay.ts",
+    "record": "node --env-file=.env --import tsx scripts/record.ts"
   },
   "dependencies": {
     "robots-parser": "^3.0.1",

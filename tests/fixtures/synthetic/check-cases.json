@@ -1,0 +1,60 @@
+{
+  "robots": {
+    "stated": "User-agent: *\nAllow: /\nContent-Signal: search=yes, ai-train=no",
+    "partial": "User-agent: GPTBot\nDisallow: /training",
+    "silent": "User-agent: *\nAllow: /"
+  },
+  "catalogs": {
+    "machine": {
+      "dataset": [{
+        "license": "https://example.test/license",
+        "description": "A complete description long enough for an agent to understand this dataset.",
+        "modified": "2026-10-01T00:00:00Z",
+        "distribution": [{"downloadURL": "https://example.test/data.csv"}]
+      }]
+    },
+    "proseShortStale": {
+      "dataset": [{
+        "license": "Available for public use with attribution",
+        "description": "Short description",
+        "modified": "2019-01-01T00:00:00Z"
+      }]
+    },
+    "emptyTemplateImpossible": {
+      "dataset": [{
+        "license": "TBD",
+        "description": "{{description}}",
+        "modified": "1900-01-01T00:00:00Z"
+      }]
+    },
+    "spdxEmptyFuture": {
+      "dataset": [{
+        "license": "MIT",
+        "description": "",
+        "modified": "2027-01-01T00:00:00Z"
+      }]
+    },
+    "ckan": {
+      "success": true,
+      "result": {
+        "results": [{
+          "license_url": "https://example.test/license",
+          "notes": "A complete CKAN description that is long enough for the synthetic check.",
+          "metadata_modified": "2026-10-01T00:00:00Z",
+          "resources": [{"url": "https://example.test/data.csv"}]
+        }]
+      }
+    },
+    "socrata": {
+      "results": [{
+        "resource": {
+          "description": "A complete Socrata description that is long enough for the synthetic check.",
+          "updatedAt": "2026-10-01T00:00:00Z"
+        },
+        "metadata": {"license": "MIT"},
+        "permalink": "https://example.test/view"
+      }]
+    },
+    "missing": {"dataset": []}
+  }
+}
