@@ -1,0 +1,92 @@
+[
+  {
+    "alias": "detroit",
+    "name": "Detroit Open Data Portal",
+    "host": "data.detroitmi.gov",
+    "mode": "audit",
+    "catalogUrl": "https://data.detroitmi.gov/api/feed/dcat-us/1.1.json",
+    "dialect": "dcat",
+    "tos": {
+      "status": "no-prohibition-found",
+      "sourceUrl": "https://detroitmi.gov/media/776",
+      "evidence": "Executive Order 2015-2 makes city data public unless exempt by law; no automation clause found in searched city pages. Portal footer terms not yet read (page is JavaScript-rendered).",
+      "reviewedOn": "2026-10-31"
+    },
+    "tosReviewed": false,
+    "notes": "robots.txt allows all with Crawl-delay 60 (probed 2026-10-31). Owner: open the portal in a browser, read footer terms, then set tosReviewed true. DCAT contactPoint is gis@detroitmi.gov."
+  },
+  {
+    "alias": "boston",
+    "name": "Analyze Boston",
+    "host": "data.boston.gov",
+    "mode": "audit",
+    "catalogUrl": "https://data.boston.gov/api/3/action/package_search?rows=50",
+    "dialect": "ckan",
+    "tos": {
+      "status": "no-prohibition-found",
+      "sourceUrl": "https://data.boston.gov/dataset/open-and-protected-data-policy",
+      "evidence": "Default dataset license is ODC Public Domain Dedication and License (PDDL); CKAN API is published for programmatic use. An older City of Boston Data License Agreement page also exists.",
+      "reviewedOn": "2026-10-31"
+    },
+    "tosReviewed": true,
+    "notes": "Comparator. City runs an official MCP server for open data (Fast Company, Mar 2026)."
+  },
+  {
+    "alias": "chicago",
+    "name": "Chicago Data Portal",
+    "host": "data.cityofchicago.org",
+    "mode": "audit",
+    "catalogUrl": "https://data.cityofchicago.org/data.json",
+    "dialect": "dcat",
+    "tos": {
+      "status": "unclear",
+      "sourceUrl": "https://webapps1.chicago.gov/ChicagoTif/disclaimer.html",
+      "evidence": "Terms excerpt reviewed covers liability and attribution; no automation clause seen, but the full data portal terms page could not be fetched.",
+      "reviewedOn": "2026-10-31"
+    },
+    "tosReviewed": false,
+    "notes": "Comparator (Socrata). Owner: read data.cityofchicago.org terms in a browser before enabling."
+  },
+  {
+    "alias": "wikipedia",
+    "name": "Wikipedia",
+    "host": "en.wikipedia.org",
+    "mode": "knock",
+    "tos": {
+      "status": "allowed-with-conditions",
+      "sourceUrl": "https://wikitech.wikimedia.org/wiki/Robot_policy",
+      "evidence": "Wikimedia robot policy: identify your bot via User-Agent with contact info and honor every robots.txt directive.",
+      "reviewedOn": "2026-10-31"
+    },
+    "tosReviewed": true,
+    "notes": "Quick Knock positive example. Our UA includes contact info as required."
+  },
+  {
+    "alias": "michigan",
+    "name": "Michigan.gov (and State of Michigan portals)",
+    "host": "www.michigan.gov",
+    "mode": "knock",
+    "tos": {
+      "status": "prohibited",
+      "sourceUrl": "https://www.michigan.gov/som/footer/policies",
+      "evidence": "Michigan.gov Terms of Use (updated Dec 2021): users agree not to access the website through any automated means, including scripts and web crawlers.",
+      "reviewedOn": "2026-10-31"
+    },
+    "tosReviewed": true,
+    "notes": "NO network requests. The agent stops at the door and shows the terms finding. Applies until DTMB grants written permission. Same treatment for data.michigan.gov, gis-michigan.opendata.arcgis.com and other state-run portals until their terms are confirmed."
+  },
+  {
+    "alias": "twitch",
+    "name": "Twitch",
+    "host": "www.twitch.tv",
+    "mode": "knock",
+    "tos": {
+      "status": "prohibited",
+      "sourceUrl": "https://discuss.dev.twitch.com/t/question-about-terms-of-use/11497",
+      "evidence": "Twitch Terms of Service bar accessing Twitch resources by robot, spider, scraper, crawler or other automated means for any purpose; API use is governed separately by the Developer Agreement.",
+      "reviewedOn": "2026-10-31"
+    },
+    "tosReviewed": true,
+    "notes": "NO network requests to twitch.tv pages. Fun on-stream moment: the agent declines to knock on Twitch itself and explains why."
+  }
+]

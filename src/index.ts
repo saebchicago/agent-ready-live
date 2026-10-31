@@ -1,0 +1,87 @@
+import { loadRuntimeConfig } from "./config.js";
+import { CommandRouter } from "./commands.js";
+import { TwitchAuth } from "./twitch/auth.js";
+import { ChatSender } from "./twitch/chat.js";
+import { EventSubClient } from "./twitch/eventsub.js";
+
+interface EventSubEndpoints {
+  websocketUrl?: string;
+  subscriptionUrl?: string;
+}
+
+function parseEventSubEndpoints(args: string[]): EventSubEndpoints {
+  const values = new Map<string, string>();
+  for (let index = 0; index < args.length; index += 2) {
+    const flag = args[index];
+    const value = args[index + 1];
+    if (
+      (flag !== "--eventsub-url" && flag !== "--eventsub-api-url") ||
+      value === undefined
+    ) {
+      throw new Error(
+        "Usage: npm run dev -- [--eventsub-url <url> --eventsub-api-url <url>]",
+      );
+    }
+    values.set(flag, value);
+  }
+  const websocketUrl = values.get("--eventsub-url");
+  const subscriptionUrl = values.get("--eventsub-api-url");
+  if ((websocketUrl === undefined) !== (subscriptionUrl === undefined)) {
+    throw new Error("Local EventSub testing requires both EventSub URL arguments");
+  }
+  return {
+    ...(websocketUrl === undefined ? {} : { websocketUrl }),
+    ...(subscriptionUrl === undefined ? {} : { subscriptionUrl }),
+  };
+}
+
+async function main(): Promise<void> {
+  const config = loadRuntimeConfig();
+  const endpoints = parseEventSubEndpoints(process.argv.slice(2));
+  const auth = new TwitchAuth(config);
+  const identity = await auth.initialize(config.botUserId);
+  const commands = new CommandRouter();
+  const chat = new ChatSender({
+    auth,
+    botUserId: config.botUserId,
+    channelUserId: config.channelUserId,
+  });
+  const eventSub = new EventSubClient({
+    auth,
+    botUserId: config.botUserId,
+    channelUserId: config.channelUserId,
+    ...endpoints,
+    onMessage: async (message) => {
+      const reply = commands.handle({ userId: message.userId, text: message.text });
+      if (reply !== undefined) await chat.send(reply);
+    },
+    onRevocation: ({ type, status }) => {
+      console.error(`EventSub subscription revoked: ${type} (${status})`);
+    },
+    onError: (error) => {
+      console.error(error instanceof Error ? error.message : "EventSub error");
+    },
+  });
+  let stopValidation = (): void => undefined;
+  stopValidation = auth.startHourlyValidation(config.botUserId, (error) => {
+    console.error(error instanceof Error ? error.message : "Token validation failed");
+    eventSub.stop();
+    stopValidation();
+    process.exitCode = 1;
+  });
+
+  const shutdown = (): void => {
+    eventSub.stop();
+    stopValidation();
+  };
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
+
+  eventSub.start();
+  console.log(`Agent-Ready Live connected as ${identity.login}.`);
+}
+
+main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : "Agent-Ready Live failed to start");
+  process.exitCode = 1;
+});
