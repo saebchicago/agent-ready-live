@@ -53,7 +53,11 @@ export function gradeAudit(
     earned += POINTS[check.id]?.[check.outcome] ?? 0;
   }
   const score = possible === 0 ? 0 : Math.round((earned / possible) * 100);
-  const sampleText = sampledEntries === 1 ? "Sampled 1" : `Sampled ${sampledEntries}`;
+  const sampleText = mode === "knock"
+    ? "Knock only: no catalog sampled"
+    : sampledEntries === 1
+      ? "Sampled 1"
+      : `Sampled ${sampledEntries}`;
   return {
     score,
     verdict: `${sampleText} | Probed ${probedOn} | Rubric v1 | Not a ranking of agency quality`,

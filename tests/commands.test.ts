@@ -54,7 +54,7 @@ describe("game command routing", () => {
       },
       placeBet: () => "accepted" as const,
       score: () => ({ points: 20, streak: 2 }),
-      board: () => "wikipedia 100",
+      board: () => "wikipedia K2 allowed",
       stop() { this.stopped += 1; },
     };
     return game;
@@ -68,9 +68,9 @@ describe("game command routing", () => {
       game,
       displayHandle: (login) => login === "consented" ? login : "Anonymous viewer",
     });
-    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!knock wikipedia" })).toContain("queued");
+    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!knock wikipedia" })).toBeUndefined();
     now += 1_000;
-    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!audit boston" })).toContain("queued");
+    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!audit boston" })).toBeUndefined();
     expect(game.queued).toEqual([
       { alias: "wikipedia", mode: "knock", requestedBy: "consented" },
       { alias: "boston", mode: "audit", requestedBy: "consented" },
@@ -80,7 +80,7 @@ describe("game command routing", () => {
     now += 1_000;
     expect(router.handle({ userId: "u1", userLogin: "consented", text: "!score" })).toContain("20 points");
     now += 1_000;
-    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!board" })).toContain("wikipedia 100");
+    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!board" })).toContain("wikipedia K2 allowed");
   });
 
   it("allows only a moderator or broadcaster to engage the kill switch", () => {

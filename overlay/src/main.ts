@@ -1,4 +1,5 @@
 import type { GameState, LeaderboardRow } from "../../src/server/state.js";
+import { stageScale } from "./layout.js";
 
 function element<T extends HTMLElement>(id: string): T {
   const value = document.getElementById(id);
@@ -8,7 +9,20 @@ function element<T extends HTMLElement>(id: string): T {
 
 const app = element<HTMLElement>("app");
 const connection = element<HTMLElement>("connection");
+const stylesheetLink = element<HTMLLinkElement>("overlay-stylesheet");
 let state: GameState | undefined;
+
+function fitStage(): void {
+  const sheet = stylesheetLink.sheet;
+  if (sheet === null) return;
+  const stageRule = Array.from(sheet.cssRules).find(
+    (rule): rule is CSSStyleRule => rule instanceof CSSStyleRule && rule.selectorText === "#stage",
+  );
+  stageRule?.style.setProperty(
+    "transform",
+    `translate(-50%, -50%) scale(${stageScale(window.innerWidth, window.innerHeight)})`,
+  );
+}
 
 function text(id: string, value: string | number): void {
   element(id).textContent = String(value);
@@ -32,7 +46,10 @@ function renderRows(id: string, rows: readonly LeaderboardRow[]): void {
     badges.className = "board-checks";
     badges.textContent = row.checks.map(({ id, outcome }) => `${id} ${outcome.replaceAll("_", " ")}`).join(" · ");
     const meta = document.createElement("span");
-    meta.textContent = `Sampled ${row.sampledEntries} | Probed ${row.probedOn} | ${row.rubricVersion} | Not a ranking of agency quality`;
+    const sample = row.targetMode === "knock"
+      ? "Knock only: no catalog sampled"
+      : `Sampled ${row.sampledEntries}`;
+    meta.textContent = `${sample} | Probed ${row.probedOn} | ${row.rubricVersion} | Not a ranking of agency quality`;
     item.append(rank, name, badges, meta);
     return item;
   });
@@ -203,5 +220,7 @@ function connect(): void {
   });
 }
 
+fitStage();
+window.addEventListener("resize", fitStage);
 setInterval(renderCountdowns, 200);
 connect();

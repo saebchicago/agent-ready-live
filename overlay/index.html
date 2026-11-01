@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent-Ready Live</title>
-    <link rel="stylesheet" href="/src/styles.css">
+    <link id="overlay-stylesheet" rel="stylesheet" href="/src/styles.css">
   </head>
   <body>
+    <div id="stage">
     <main id="app" data-phase="idle">
       <header class="topbar">
         <div>
@@ -130,6 +131,7 @@
         </div>
       </section>
     </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

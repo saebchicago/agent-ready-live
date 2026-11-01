@@ -95,7 +95,7 @@ describe("gameReducer", () => {
     state = gameReducer(state, {
       type: "VERDICT",
       now: baseTime,
-      text: "Sampled 3 | Probed 2026-10-31 | Rubric v1 | Not a ranking of agency quality",
+      text: "Knock only: no catalog sampled | Probed 2026-10-31 | Rubric v1 | Not a ranking of agency quality",
       reasons: ["K2:allowed"],
       checks: [{ id: "K2", outcome: "allowed" }],
       sampledEntries: 3,
@@ -123,6 +123,34 @@ describe("gameReducer", () => {
 });
 
 describe("GameEngine terms replay", () => {
+  it("announces queue position before starting the target", async () => {
+    const messages: string[] = [];
+    const game = new GameEngine({
+      runtimeMode: "REPLAY",
+      targets: [target("michigan")],
+      fetcher: { runtimeMode: "REPLAY", runAudit: async () => { throw new Error("terms gate should prevent fetcher use"); } },
+      announce: (message) => { messages.push(message); },
+      sleep: async () => undefined,
+      doorClosedMs: 0,
+    });
+    game.queueAudit({ alias: "michigan", mode: "knock", requestedBy: "chat" });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(messages[0]).toBe("michigan queued at position 1.");
+    expect(messages[1]).toBe("Starting michigan. The robot approaches the door.");
+  });
+
+  it("rewrites robots.txt to robots file in chat announcements", () => {
+    const messages: string[] = [];
+    const game = new GameEngine({
+      runtimeMode: "REPLAY",
+      targets: [target("michigan")],
+      fetcher: { runtimeMode: "REPLAY", runAudit: async () => { throw new Error("unexpected fetcher use"); } },
+      announce: (message) => { messages.push(message); },
+    });
+    game.handleFetcherEvent({ type: "request", method: "GET", path: "/robots.txt", status: 200, ms: 1 });
+    expect(messages).toEqual(["GET /robots file 200 in 1ms."]);
+  });
+
   it("uses a 20-second default betting window", () => {
     expect(DEFAULT_BET_WINDOW_MS).toBe(20_000);
   });

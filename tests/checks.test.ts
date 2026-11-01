@@ -210,6 +210,7 @@ describe("audit orchestration and grading", () => {
     const silent = gradeAudit("knock", [...base, checkK3(fixture.robots.silent), checkK4(policy("present"))], 0, "2026-10-31");
     const stated = gradeAudit("knock", [...base, checkK3(fixture.robots.stated), checkK4(policy("present", { crawlDelayMs: 1000 }))], 0, "2026-10-31");
     expect(silent.score).toBe(stated.score);
+    expect(silent.verdict).toBe("Knock only: no catalog sampled | Probed 2026-10-31 | Rubric v1 | Not a ranking of agency quality");
   });
 });
 

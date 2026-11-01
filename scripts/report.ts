@@ -27,7 +27,10 @@ async function main(): Promise<void> {
     });
     const audit = await runAuditChecks(target, fetcher, () => new Date(`${probeDate}T12:00:00Z`));
     const checks = audit.checks.map(({ id, outcome }) => `${id}=${outcome}`).join("; ");
-    const statement = `Sampled ${audit.sampledEntries} | Probed ${probeDate} | Rubric v1 | Not a ranking of agency quality`
+    const sample = target.mode === "knock"
+      ? "Knock only: no catalog sampled"
+      : `Sampled ${audit.sampledEntries}`;
+    const statement = `${sample} | Probed ${probeDate} | Rubric v1 | Not a ranking of agency quality`
       .replaceAll("|", "\\|");
     rows.push(`| ${target.alias} | ${target.mode} | ${target.tos.status} | ${checks || "not found in sample"} | ${statement} |`);
   }

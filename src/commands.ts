@@ -84,7 +84,7 @@ export class CommandRouter {
         mode,
         requestedBy: this.displayName(message),
       });
-      if (queued.status === "queued") return `${alias} queued at position ${queued.position}.`;
+      if (queued.status === "queued") return undefined;
       if (queued.status === "full") return "Queue is full. Try again after a round.";
       if (queued.status === "stopped") return "Audits are stopped by the kill switch.";
       if (queued.status === "wrong_mode") {

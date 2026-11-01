@@ -107,9 +107,13 @@ export class GameEngine {
       },
     });
     const position = this.store.getState().queue.length;
-    void this.say(`${target.alias} joined the ${target.mode === "knock" ? "knock" : "audit"} queue.`);
-    void this.drain();
+    void this.announceQueuePositionAndDrain(target, position);
     return { status: "queued", position, targetName: target.name };
+  }
+
+  private async announceQueuePositionAndDrain(target: Target, position: number): Promise<void> {
+    await this.say(`${target.alias} queued at position ${position}.`);
+    await this.drain();
   }
 
   placeBet(
@@ -277,7 +281,7 @@ export class GameEngine {
   }
 
   private async say(message: string): Promise<void> {
-    await this.announce(message.replace(/\s+/gu, " ").trim());
+    await this.announce(message.replace(/robots\.txt/giu, "robots file").replace(/\s+/gu, " ").trim());
   }
 }
 
