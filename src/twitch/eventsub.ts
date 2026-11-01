@@ -10,6 +10,8 @@ export interface ChatMessageEvent {
   userId: string;
   userLogin: string;
   text: string;
+  isModerator: boolean;
+  isBroadcaster: boolean;
 }
 
 export interface Revocation {
@@ -78,7 +80,10 @@ function parseEnvelope(data: unknown): EventSubEnvelope | undefined {
   return { metadata, payload } as EventSubEnvelope;
 }
 
-function parseChatEvent(payload: Record<string, unknown>): ChatMessageEvent | undefined {
+function parseChatEvent(
+  payload: Record<string, unknown>,
+  channelUserId: string,
+): ChatMessageEvent | undefined {
   const subscription = asObject(payload.subscription);
   if (subscription?.type !== "channel.chat.message") return undefined;
   const event = asObject(payload.event);
@@ -91,11 +96,22 @@ function parseChatEvent(payload: Record<string, unknown>): ChatMessageEvent | un
   ) {
     return undefined;
   }
+  const chatterLogin = event.chatter_user_login;
+  const badges = Array.isArray(event.badges) ? event.badges : [];
+  const badgeIds = new Set(
+    badges.flatMap((badge) => {
+      const value = asObject(badge)?.set_id;
+      return typeof value === "string" ? [value] : [];
+    }),
+  );
+  const isBroadcaster = event.chatter_user_id === channelUserId || badgeIds.has("broadcaster");
   return {
     messageId: event.message_id,
     userId: event.chatter_user_id,
-    userLogin: event.chatter_user_login,
+    userLogin: typeof chatterLogin === "string" ? chatterLogin : "viewer",
     text: message.text,
+    isModerator: isBroadcaster || badgeIds.has("moderator"),
+    isBroadcaster,
   };
 }
 
@@ -245,7 +261,7 @@ export class EventSubClient {
   }
 
   private handleNotification(payload: Record<string, unknown>): void {
-    const message = parseChatEvent(payload);
+    const message = parseChatEvent(payload, this.options.channelUserId);
     if (message === undefined) return;
     if (this.remember(this.seenChatMessageIds, message.messageId)) return;
     if (message.userId === this.options.botUserId) return;

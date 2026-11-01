@@ -21,6 +21,11 @@ export interface AuditCheckResult {
   probedOn: string;
 }
 
+export interface AuditCheckHooks {
+  beforeCheck?: (id: CheckResult["id"]) => void | Promise<void>;
+  onCheck?: (check: CheckResult) => void | Promise<void>;
+}
+
 interface CatalogEntry {
   license: unknown;
   description: unknown;
@@ -348,41 +353,58 @@ export async function runAuditChecks(
   target: Target,
   fetcher: Fetcher,
   now: () => Date = () => new Date(),
+  hooks: AuditCheckHooks = {},
 ): Promise<AuditCheckResult> {
+  const checks: CheckResult[] = [];
+  const reveal = async (check: CheckResult): Promise<void> => {
+    await hooks.beforeCheck?.(check.id);
+    checks.push(check);
+    await hooks.onCheck?.(check);
+  };
   const t0 = checkT0(target);
   const probedOn = now().toISOString().slice(0, 10);
+  await reveal(t0);
   if (t0.outcome !== "TERMS_GATE_OPEN") {
-    return { checks: [t0], sampledEntries: 0, probedOn };
+    return { checks, sampledEntries: 0, probedOn };
   }
 
   return await fetcher.runAudit(target, async (session) => {
-    const checks: CheckResult[] = [t0];
     const policy = await session.robots();
-    checks.push(checkK1(policy));
+    await reveal(checkK1(policy));
     if (policy.kind === "BLOCKED_BY_WAF") return { checks, sampledEntries: 0, probedOn };
 
     const paths = plannedUrls(target);
-    checks.push(checkK2(policy, paths));
-    checks.push(checkK4(policy));
+    await reveal(checkK2(policy, paths));
     if (policy.stopped) {
-      checks.splice(3, 0, checkK3(policy.text));
+      await reveal(checkK3(policy.text));
+      await reveal(checkK4(policy));
       return { checks, sampledEntries: 0, probedOn };
     }
 
     if (target.mode === "knock") {
+      await hooks.beforeCheck?.("K3");
       let llms: FetchResponse | undefined;
       try {
         llms = await session.request(paths[0] ?? `https://${target.host}/llms.txt`, "GET");
       } catch (error) {
         if (!(error instanceof FetcherError)) throw error;
       }
-      checks.splice(3, 0, checkK3(policy.text, llms));
+      const k3 = checkK3(policy.text, llms);
+      checks.push(k3);
+      await hooks.onCheck?.(k3);
+      await reveal(checkK4(policy));
       return { checks, sampledEntries: 0, probedOn };
     }
 
-    checks.splice(3, 0, checkK3(policy.text));
+    await reveal(checkK3(policy.text));
+    await reveal(checkK4(policy));
     if (target.catalogUrl === undefined || target.dialect === undefined) {
-      checks.push(...missingChecks(["D1", "D2", "D3", "D4", "D5"], "target has no configured catalog endpoint"));
+      for (const check of missingChecks(
+        ["D1", "D2", "D3", "D4", "D5"],
+        "target has no configured catalog endpoint",
+      )) {
+        await reveal(check);
+      }
       return { checks, sampledEntries: 0, probedOn };
     }
 
@@ -399,14 +421,18 @@ export async function runAuditChecks(
       catalogReason = error instanceof FetcherError ? error.message : "catalog response was not valid JSON";
     }
 
-    checks.push(checkD1(catalogResponse, entries));
-    checks.push(checkD2(entries));
-    checks.push(checkD3(entries));
-    checks.push(checkD4(entries, now()));
+    await reveal(checkD1(catalogResponse, entries));
+    await reveal(checkD2(entries));
+    await reveal(checkD3(entries));
+    await reveal(checkD4(entries, now()));
 
     const distribution = firstDistribution(entries, target);
     if (distribution === undefined) {
-      checks.push(result("D5", "not_found_in_sample", `Sanctioned data lane not found in sample: ${catalogReason}.`));
+      await reveal(result(
+        "D5",
+        "not_found_in_sample",
+        `Sanctioned data lane not found in sample: ${catalogReason}.`,
+      ));
     } else {
       let head: FetchResponse | undefined;
       try {
@@ -414,7 +440,7 @@ export async function runAuditChecks(
       } catch (error) {
         if (!(error instanceof FetcherError)) throw error;
       }
-      checks.push(checkD5(head));
+      await reveal(checkD5(head));
     }
     return { checks, sampledEntries: entries.length, probedOn };
   });

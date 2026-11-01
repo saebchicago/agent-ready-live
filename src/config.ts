@@ -40,6 +40,8 @@ export interface RuntimeConfig extends OAuthConfig {
   botUserId: string;
   channelUserId: string;
   contactEmail: string;
+  repoUrl: string;
+  consentingHandles: ReadonlySet<string>;
   targets: readonly Target[];
 }
 
@@ -233,11 +235,20 @@ export function loadRuntimeConfig(): RuntimeConfig {
   if (!/^\S+@\S+\.\S+$/.test(contactEmail)) {
     throw new Error("CONTACT_EMAIL must be an email address");
   }
+  const repoUrl = httpsUrl(env("REPO_URL"), "REPO_URL");
+  const consentingHandles = new Set(
+    (process.env.CONSENTING_HANDLES ?? "")
+      .split(",")
+      .map((handle) => handle.trim().toLowerCase())
+      .filter(Boolean),
+  );
   return {
     ...oauth,
     botUserId: userId("TWITCH_BOT_USER_ID"),
     channelUserId: userId("TWITCH_CHANNEL_USER_ID"),
     contactEmail,
+    repoUrl,
+    consentingHandles,
     targets,
   };
 }

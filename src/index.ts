@@ -1,5 +1,9 @@
+import { resolve } from "node:path";
 import { loadRuntimeConfig } from "./config.js";
 import { CommandRouter } from "./commands.js";
+import { LiveFetcher } from "./audit/fetcher.js";
+import { GameEngine } from "./server/game.js";
+import { OverlayServer } from "./server/server.js";
 import { TwitchAuth } from "./twitch/auth.js";
 import { ChatSender } from "./twitch/chat.js";
 import { EventSubClient } from "./twitch/eventsub.js";
@@ -40,11 +44,29 @@ async function main(): Promise<void> {
   const endpoints = parseEventSubEndpoints(process.argv.slice(2));
   const auth = new TwitchAuth(config);
   const identity = await auth.initialize(config.botUserId);
-  const commands = new CommandRouter();
   const chat = new ChatSender({
     auth,
     botUserId: config.botUserId,
     channelUserId: config.channelUserId,
+  });
+  let game: GameEngine | undefined;
+  const fetcher = new LiveFetcher({
+    repoUrl: config.repoUrl,
+    contactEmail: config.contactEmail,
+    allowlist: config.targets,
+    onEvent: (event) => game?.handleFetcherEvent(event),
+  });
+  game = new GameEngine({
+    runtimeMode: "LIVE",
+    targets: config.targets,
+    fetcher,
+    announce: (message) => void chat.send(message),
+  });
+  const overlay = new OverlayServer({ store: game.store, assetRoot: resolve("overlay/dist") });
+  const overlayUrl = await overlay.start();
+  const commands = new CommandRouter({
+    game,
+    displayHandle: (login) => config.consentingHandles.has(login.toLowerCase()) ? login : "Anonymous viewer",
   });
   const eventSub = new EventSubClient({
     auth,
@@ -52,7 +74,13 @@ async function main(): Promise<void> {
     channelUserId: config.channelUserId,
     ...endpoints,
     onMessage: async (message) => {
-      const reply = commands.handle({ userId: message.userId, text: message.text });
+      const reply = commands.handle({
+        userId: message.userId,
+        userLogin: message.userLogin,
+        text: message.text,
+        isModerator: message.isModerator,
+        isBroadcaster: message.isBroadcaster,
+      });
       if (reply !== undefined) await chat.send(reply);
     },
     onRevocation: ({ type, status }) => {
@@ -67,6 +95,7 @@ async function main(): Promise<void> {
     console.error(error instanceof Error ? error.message : "Token validation failed");
     eventSub.stop();
     stopValidation();
+    void overlay.stop();
     process.exitCode = 1;
   });
 
@@ -79,6 +108,7 @@ async function main(): Promise<void> {
 
   eventSub.start();
   console.log(`Agent-Ready Live connected as ${identity.login}.`);
+  console.log(`Overlay ready at ${overlayUrl}.`);
 }
 
 main().catch((error: unknown) => {

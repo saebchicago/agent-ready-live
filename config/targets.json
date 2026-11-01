@@ -8,11 +8,11 @@
     "dialect": "dcat",
     "tos": {
       "status": "no-prohibition-found",
-      "sourceUrl": "https://detroitmi.gov/media/776",
-      "evidence": "Executive Order 2015-2 makes city data public unless exempt by law; no automation clause found in searched city pages. Portal footer terms not yet read (page is JavaScript-rendered).",
+      "sourceUrl": "https://www.detroitmi.gov/Privacy",
+      "evidence": "No automated-access clause in portal Disclaimer or detroitmi.gov Privacy/Terms (read 2026-10-31). Terms bar commercial use without written permission; footer says material may only be used with permission. Non-commercial open-source demo; heads-up sent to gis@detroitmi.gov.",
       "reviewedOn": "2026-10-31"
     },
-    "tosReviewed": false,
+    "tosReviewed": true,
     "notes": "robots.txt allows all with Crawl-delay 60 (probed 2026-10-31). Owner: open the portal in a browser, read footer terms, then set tosReviewed true. DCAT contactPoint is gis@detroitmi.gov."
   },
   {

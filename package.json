@@ -7,12 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "node --env-file=.env --import tsx src/index.ts",
+    "dev": "npm run build:overlay && node --env-file=.env --import tsx src/index.ts",
     "auth": "node --env-file=.env --import tsx src/twitch/auth.ts",
     "whois": "node --env-file=.env --import tsx src/twitch/whois.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p overlay/tsconfig.json",
     "test": "vitest run",
-    "replay": "node --import tsx src/replay.ts",
+    "replay": "npm run build:overlay && node --import tsx src/replay.ts",
+    "build:overlay": "vite build --config overlay/vite.config.ts",
     "record": "node --env-file=.env --import tsx scripts/record.ts"
   },
   "dependencies": {

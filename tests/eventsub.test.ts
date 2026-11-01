@@ -56,12 +56,14 @@ function notification(
   envelopeId: string,
   messageId: string,
   chatterUserId = "viewer-id",
+  badges: Array<{ set_id: string }> = [],
 ): object {
   return envelope(envelopeId, "notification", {
     subscription: { type: "channel.chat.message" },
     event: {
       message_id: messageId,
       chatter_user_id: chatterUserId,
+      badges,
       chatter_user_login: "viewer",
       message: { text: "!ping" },
     },
@@ -109,6 +111,18 @@ describe("EventSubClient chat filtering", () => {
     sockets[0]?.socket.message(notification("event-1", "chat-1", "bot-id"));
 
     expect(received).toEqual([]);
+    client.stop();
+  });
+
+  it("identifies broadcaster and moderator badges for protected commands", () => {
+    const received: ChatMessageEvent[] = [];
+    const { client, sockets } = setup((message) => received.push(message));
+    sockets[0]?.socket.message(notification("event-mod", "chat-mod", "mod-id", [{ set_id: "moderator" }]));
+    sockets[0]?.socket.message(notification("event-broadcaster", "chat-broadcaster", "channel-id"));
+    expect(received.map(({ isModerator, isBroadcaster }) => ({ isModerator, isBroadcaster }))).toEqual([
+      { isModerator: true, isBroadcaster: false },
+      { isModerator: true, isBroadcaster: true },
+    ]);
     client.stop();
   });
 });

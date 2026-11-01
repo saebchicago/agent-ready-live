@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent-Ready Live</title>
+    <link rel="stylesheet" href="/src/styles.css">
+  </head>
+  <body>
+    <main id="app" data-phase="idle">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">TWITCH CHAT SENDS A POLITE AGENT</p>
+          <h1>AGENT-READY <span>LIVE</span></h1>
+        </div>
+        <div class="status-cluster">
+          <span id="connection" class="connection">CONNECTING</span>
+          <span id="mode-badge" class="mode-badge">REPLAY</span>
+          <span id="queue-count" class="queue-count">QUEUE 0/5</span>
+        </div>
+      </header>
+
+      <section class="stage">
+        <div class="scene">
+          <div class="door" aria-hidden="true">
+            <span class="door-number">WWW</span>
+            <span class="door-knob"></span>
+          </div>
+          <svg class="robot" viewBox="0 0 260 300" role="img" aria-label="A friendly robot at a website door">
+            <g class="robot-shadow"><ellipse cx="130" cy="281" rx="70" ry="13"></ellipse></g>
+            <g class="robot-body">
+              <path class="antenna" d="M130 47 V23"></path>
+              <circle class="antenna-tip" cx="130" cy="18" r="10"></circle>
+              <rect class="head" x="62" y="50" width="136" height="92" rx="30"></rect>
+              <circle class="eye" cx="103" cy="91" r="11"></circle>
+              <circle class="eye" cx="157" cy="91" r="11"></circle>
+              <path class="smile" d="M103 116 Q130 132 157 116"></path>
+              <rect class="torso" x="78" y="151" width="104" height="83" rx="24"></rect>
+              <circle class="core" cx="130" cy="190" r="20"></circle>
+              <path class="arm arm-left" d="M78 169 Q44 185 48 226"></path>
+              <path class="arm arm-right" d="M182 169 Q218 180 214 218"></path>
+              <path class="leg" d="M105 232 V270"></path>
+              <path class="leg" d="M155 232 V270"></path>
+              <path class="foot" d="M82 272 H111"></path>
+              <path class="foot" d="M149 272 H178"></path>
+            </g>
+          </svg>
+          <div class="motion-lines" aria-hidden="true"><span></span><span></span><span></span></div>
+        </div>
+
+        <div class="content-column">
+          <section id="idle-panel" class="panel hero-panel">
+            <p class="kicker">THE FRONT DOOR TEST</p>
+            <h2>Where should our agent knock next?</h2>
+            <div class="command-pills">
+              <span>!knock wikipedia</span>
+              <span>!audit boston</span>
+            </div>
+            <p class="hint">Chat predicts what the site will say. The robot always respects the answer.</p>
+          </section>
+
+          <section id="active-panel" class="panel active-panel" hidden>
+            <div class="target-line">
+              <span id="target-mode" class="target-mode">QUICK KNOCK</span>
+              <h2 id="target-name">Target</h2>
+            </div>
+
+            <div id="bet-panel" class="event-card bet-card" hidden>
+              <p class="card-label">CHAT PREDICTION</p>
+              <h3 id="bet-question">Will it open?</h3>
+              <div class="bet-meter">
+                <div><strong id="yes-count">0</strong><span>!y YES</span></div>
+                <div class="countdown" id="bet-countdown">8</div>
+                <div><strong id="no-count">0</strong><span>!n NO</span></div>
+              </div>
+            </div>
+
+            <div id="wait-panel" class="event-card wait-card" hidden>
+              <p class="card-label">POLITENESS MODE</p>
+              <h3 id="wait-message">This site asks us to wait.</h3>
+              <p id="wait-countdown" class="wait-countdown">0s</p>
+            </div>
+
+            <div id="door-panel" class="event-card door-card" hidden>
+              <p class="card-label">DOOR CLOSED BY TERMS</p>
+              <h3>We do not knock where automation is prohibited.</h3>
+              <p id="terms-evidence" class="evidence"></p>
+              <a id="terms-source" rel="noreferrer">Terms source</a>
+              <strong>Zero requests sent.</strong>
+            </div>
+
+            <div id="verdict-panel" class="event-card verdict-card" hidden>
+              <p class="card-label">SAMPLED VERDICT</p>
+              <div class="score-ring"><span id="verdict-score">0</span><small>/100</small></div>
+              <ul id="reason-list" class="reason-list"></ul>
+              <p id="correct-bettors" class="correct-bettors"></p>
+              <p id="verdict-line" class="verdict-line"></p>
+              <p id="error-line" class="error-line"></p>
+            </div>
+
+            <div id="mvp-panel" class="event-card mvp-card" hidden>
+              <p class="card-label">ROUND MVP</p>
+              <h3 id="mvp-name">Anonymous viewer</h3>
+              <p><span id="mvp-points">0</span> points this round</p>
+              <p>Current streak: <span id="mvp-streak">0</span></p>
+            </div>
+
+            <div id="audit-panel" class="audit-grid">
+              <div>
+                <p class="card-label">CHECKS</p>
+                <div id="check-tiles" class="check-tiles"></div>
+              </div>
+              <div>
+                <p class="card-label">REQUEST TICKER</p>
+                <div id="request-ticker" class="request-ticker"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="boards" class="boards">
+        <div class="board">
+          <p class="card-label">MOST WELCOMING SITES</p>
+          <div id="knock-board" class="board-rows"></div>
+        </div>
+        <div class="board">
+          <p class="card-label">OPEN DATA READINESS</p>
+          <div id="audit-board" class="board-rows"></div>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
