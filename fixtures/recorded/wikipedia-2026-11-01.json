@@ -25,7 +25,6 @@
         "strict-transport-security": "max-age=106384710; includeSubDomains; preload",
         "report-to": "{ \"group\": \"wm_nel\", \"max_age\": 604800, \"endpoints\": [{ \"url\": \"https://intake-logging.wikimedia.org/v1/events?stream=w3c.reportingapi.network_error&schema_uri=/w3c/reportingapi/network_error/1.0.0\" }] }",
         "nel": "{ \"report_to\": \"wm_nel\", \"max_age\": 604800, \"failure_fraction\": 0.05, \"success_fraction\": 0.0}",
-        "set-cookie": "WMF-Last-Access=01-Nov-2026;Path=/;HttpOnly;secure;Expires=Thu, 03 Dec 2026 00:00:00 GMT, WMF-Last-Access-Global=01-Nov-2026;Path=/;Domain=.wikipedia.org;HttpOnly;secure;Expires=Thu, 03 Dec 2026 00:00:00 GMT, GeoIP=US:MI:West_Bloomfield:42.54:-83.38:v4; Path=/; secure; Domain=.wikipedia.org, NetworkProbeLimit=0.001;Path=/;Secure;SameSite=None;Max-Age=3600, WMF-Uniq=AbKbSc9iZVFVc4H5Eroc7QQLAAAAAFvdftATO4pTC8X9vr_Hc_4VZqwGnv4bNAGa;Domain=.wikipedia.org;Path=/;HttpOnly;secure;SameSite=None;Expires=Mon, 01 Nov 2027 00:00:00 GMT",
         "x-client-ip": "2600:1700:73b0:2d30:b595:9439:6cbc:86fe",
         "content-length": "28275",
         "x-request-id": "6c20a607-d901-4dd0-b3c2-aab7cbc27a41",
@@ -53,7 +52,6 @@
         "strict-transport-security": "max-age=106384710; includeSubDomains; preload",
         "report-to": "{ \"group\": \"wm_nel\", \"max_age\": 604800, \"endpoints\": [{ \"url\": \"https://intake-logging.wikimedia.org/v1/events?stream=w3c.reportingapi.network_error&schema_uri=/w3c/reportingapi/network_error/1.0.0\" }] }",
         "nel": "{ \"report_to\": \"wm_nel\", \"max_age\": 604800, \"failure_fraction\": 0.05, \"success_fraction\": 0.0}",
-        "set-cookie": "WMF-Last-Access=01-Nov-2026;Path=/;HttpOnly;secure;Expires=Thu, 03 Dec 2026 00:00:00 GMT, WMF-Last-Access-Global=01-Nov-2026;Path=/;Domain=.wikipedia.org;HttpOnly;secure;Expires=Thu, 03 Dec 2026 00:00:00 GMT, GeoIP=US:MI:West_Bloomfield:42.54:-83.38:v4; Path=/; secure; Domain=.wikipedia.org, NetworkProbeLimit=0.001;Path=/;Secure;SameSite=None;Max-Age=3600, WMF-Uniq=kflYp_lWZVxGIsvbCTLyvwQLAAAAAFvdRsmarduvQ2qqFSOGbXT-YnaUiBewWldz;Domain=.wikipedia.org;Path=/;HttpOnly;secure;SameSite=None;Expires=Mon, 01 Nov 2027 00:00:00 GMT",
         "x-client-ip": "2600:1700:73b0:2d30:b595:9439:6cbc:86fe",
         "content-length": "1868",
         "x-request-id": "0793271b-5d59-4015-8dbf-e080d01fce76",
@@ -65,5 +63,9 @@
       "timestamp": "2026-11-01T01:42:55.940Z",
       "ms": 39
     }
+  ],
+  "sanitized": [
+    "set-cookie",
+    "cookie"
   ]
 }

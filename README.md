@@ -1,51 +1,76 @@
 # Agent-Ready Live
 
-Agent-Ready Live is a Twitch chat game where viewers send a polite robot to check whether public websites are ready for AI agents. Phase P1 connects a bot account to Twitch chat and responds to `!ping`.
+Agent-Ready Live is a chat game where a small, polite robot reads the public files a website publishes for automated visitors and chat predicts what it will find. It makes crawler rules visible, shows when a publisher asks for a wait or says no, and samples open data catalogs to show what agents can actually find. The aim is to make respectful agent behavior easy to see and discuss. **Modeled:** results describe a limited sample, not an agency's overall quality.
 
-## Requirements
+## 60-second judge quickstart
 
-- Node.js 22 or newer
-- A Twitch developer application
-- A separate Twitch bot account
-- Twitch CLI for local EventSub testing
-
-## Setup
-
-1. Create a Twitch application in the developer console.
-2. Set its OAuth redirect URL to exactly `http://localhost:3000`.
-3. Copy `.env.example` to `.env` and fill in the Twitch client ID, client secret, bot user ID, channel user ID, token path, and contact email.
-4. Install dependencies with `npm install`.
-5. Log into Twitch as the bot in an incognito window, then run `npm run auth` and open the printed URL.
-6. Find the broadcaster account ID with `npm run whois -- <login>` and set it as `TWITCH_CHANNEL_USER_ID`.
-7. Make the bot a moderator in the broadcaster's channel.
-8. Start the bot with `npm run dev`.
-
-The default token path is `~/.agent-ready-live/tokens.json`. Keep it outside the repository.
-
-## Local Twitch CLI testing
-
-Start the Twitch CLI EventSub WebSocket mock server:
+**Verified:** the offline demo uses only recorded fixtures and runs without Twitch credentials or target-site requests.
 
 ```sh
-twitch event websocket start-server --require-subscription
+git clone https://github.com/saebchicago/agent-ready-live.git
+cd agent-ready-live
+npm ci
+npm run demo
 ```
 
-In a second terminal, connect the bot to the local WebSocket and subscription endpoints:
+Open <http://127.0.0.1:3000> in a browser or an OBS Browser Source. In the terminal running the demo, type `!y` or `!n` during a prediction, then press Enter. Use Ctrl+C to stop. `npm run demo -- --smoke` runs one round and exits.
 
-```sh
-npm run dev -- --eventsub-url ws://127.0.0.1:8080/ws --eventsub-api-url http://127.0.0.1:8080/eventsub/subscriptions
-```
+## Commands
 
-The CLI prints commands for forwarding mock events and testing reconnects. Run `twitch event websocket reconnect` to exercise the handoff. Live mode uses `wss://eventsub.wss.twitch.tv/ws` and does not need these arguments.
+| Command | What it does | Label |
+|---|---|---|
+| `!knock <alias>` | Queue a Quick Knock target | Verified |
+| `!audit <alias>` | Queue a Deep Audit target | Verified |
+| `!y` / `!n` | Place a prediction during the betting window | Verified |
+| `!score` | Show your points and streak | Verified |
+| `!board` | Show the current leaderboard | Verified |
+| `!whois` | Identify the demo bot | Modeled |
+| `!stop` | Stop queued audits, available to a broadcaster or moderator in Twitch mode | Verified |
 
-Run the unit tests with:
+The demo also plays these recorded rounds: Wikipedia, Boston, NYC, Detroit, Michigan, and Twitch. **Verified:** Michigan and Twitch stop at the terms gate and send zero requests. All replay rounds show the REPLAY badge.
 
-```sh
-npm test
-```
+## Checks
 
-The credential-free replay command is a stub in Phase P1:
+The scoring formula and outcome definitions are in [docs/RUBRIC.md](docs/RUBRIC.md).
 
-```sh
-npm run replay
-```
+| ID | Check | What it reports | Label |
+|---|---|---|---|
+| T0 | Terms gate | Whether the reviewed terms allow the audit to start | Verified |
+| K1 | robots.txt status | Present, not found, server error, unreachable, or WAF block | Verified |
+| K2 | Agent access | Whether the planned path is allowed, limited, or disallowed, including the matching rule | Verified |
+| K3 | AI-use policy | A published AI-use signal, AI-specific agent rules, or silence | Verified |
+| K4 | Crawl-delay | A declared delay, which the robot honors, or no delay | Verified |
+| D1 | Catalog | Whether a supported machine-readable catalog is reachable | Verified |
+| D2 | License | URL or SPDX identifier, prose, or empty/TBD in the sample | Verified |
+| D3 | Description | Present, short, or empty/template descriptions in the sample | Verified |
+| D4 | Dates | Sane, stale, or impossible dates in the sample | Verified |
+| D5 | Data lane | Whether one sampled distribution endpoint responds | Verified |
+
+**Modeled:** Deep Audit samples at most 50 catalog entries and one distribution. Missing fields are reported as “not found in sample.” The generated [docs/RESULTS.md](docs/RESULTS.md) summarizes the local recordings.
+
+## Safety design
+
+- **Verified:** terms are checked first; a prohibited target receives zero requests.
+- **Verified:** robots.txt follows RFC 9309 handling, including no rules for 4xx and full disallow for 5xx or unreachable.
+- **Modeled:** declared Crawl-delay is honored to be polite, even though RFC 9309 does not define it.
+- **Verified:** Quick Knock permits at most 2 requests and Deep Audit at most 3, with GET and HEAD only.
+- **Verified:** DNS pinning, private IP rejection, ports 80/443 only, manual redirects with allowlist checks, streamed size limits, and timeouts protect outbound requests.
+- **Verified:** the overlay server binds to 127.0.0.1, checks Origin, uses a strict CSP, and inserts fetched text with `textContent`.
+
+## Live Twitch setup for maintainers
+
+The judge demo does not need Twitch. To run the live bot:
+
+1. Install Node.js 22 or newer and create a Twitch developer application with redirect URL `http://localhost:3000`.
+2. Copy `.env.example` to `.env` and fill in the Twitch application ID and secret, bot and channel user IDs, token path, contact email, repository URL, and any consenting handles.
+3. Run `npm ci`, then `npm run auth` and complete the authorization flow as the bot account. Keep the token file outside the repository.
+4. Make the bot a moderator in the channel, then run `npm run dev`.
+5. Add `http://127.0.0.1:3000` as a 1920 by 1080 OBS Browser Source.
+
+Do not commit `.env` or the token file. **Modeled:** only use live audit mode for targets reviewed in `config/targets.json` and `docs/TOS-REVIEW.md`.
+
+## Built with Codex
+
+This project was built in a Codex session. **Verified:** source, checks, tests, fixtures, and this judge quickstart are included in the repository.
+
+Codex session ID: **[Add the session ID here]**

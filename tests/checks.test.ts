@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { Target } from "../src/config.js";
+import { targets, type Target } from "../src/config.js";
 import {
   checkD1,
   checkD2,
@@ -96,7 +96,7 @@ describe("T0 terms gate", () => {
     let called = false;
     const audit = await runAuditChecks(
       target({ tos: { ...target().tos, status: "prohibited" } }),
-      { runAudit: async () => { called = true; throw new Error("must not run"); } },
+      { runtimeMode: "REPLAY", runAudit: async () => { called = true; throw new Error("must not run"); } },
     );
     expect(called).toBe(false);
     expect(audit.checks).toHaveLength(1);
@@ -174,6 +174,15 @@ describe("D checks", () => {
 });
 
 describe("audit orchestration and grading", () => {
+  it("reports the exact Boston robots rule and blocked catalog path from the recording", async () => {
+    const boston = targets.find(({ alias }) => alias === "boston");
+    if (boston === undefined) throw new Error("Boston target missing");
+    const audit = await runAuditChecks(boston, new ReplayFetcher({ timeScale: 0 }));
+    const k2 = audit.checks.find(({ id }) => id === "K2");
+    expect(k2?.evidence).toContain("Blocked by robots.txt: Disallow: /api/");
+    expect(k2?.evidence).toContain("path /api/3/action/package_search");
+  });
+
   it("runs a three-request deep replay and returns every check", async () => {
     const body = JSON.stringify(fixture.catalogs.machine);
     const exchanges: AuditRecording["exchanges"] = [

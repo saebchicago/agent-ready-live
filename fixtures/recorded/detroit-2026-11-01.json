@@ -63,5 +63,9 @@
       "timestamp": "2026-11-01T01:46:14.992Z",
       "ms": 198
     }
+  ],
+  "sanitized": [
+    "set-cookie",
+    "cookie"
   ]
 }

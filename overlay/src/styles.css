@@ -170,6 +170,7 @@ h1 span { color: var(--lime); }
 .check-tile { min-height: 58px; padding: 9px; display: grid; gap: 3px; border: 1px solid var(--line); border-radius: 11px; color: #718a9a; background: rgba(255,255,255,.025); }
 .check-tile strong { font-size: 18px; }
 .check-tile span { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.check-tile .check-evidence { grid-column: 1 / -1; overflow: visible; font-size: 10px; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
 .check-tile[data-status="active"] { color: var(--amber); border-color: var(--amber); animation: pulse 1s ease infinite; }
 .check-tile[data-status="complete"] { color: var(--lime); border-color: rgba(184,255,101,.4); background: rgba(184,255,101,.08); }
 .request-ticker { display: grid; gap: 6px; }

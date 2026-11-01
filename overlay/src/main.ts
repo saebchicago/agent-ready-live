@@ -62,6 +62,12 @@ function renderChecks(current: GameState["currentAudit"]): void {
     const outcome = document.createElement("span");
     outcome.textContent = result?.outcome.replaceAll("_", " ") ?? "waiting";
     tile.append(code, outcome);
+    if (result?.id === "K2" && result.evidence.includes("Blocked by robots.txt:")) {
+      const evidence = document.createElement("span");
+      evidence.className = "check-evidence";
+      evidence.textContent = result.evidence.slice(result.evidence.indexOf("Blocked by robots.txt:"));
+      tile.append(evidence);
+    }
     return tile;
   });
   container.replaceChildren(...tiles);

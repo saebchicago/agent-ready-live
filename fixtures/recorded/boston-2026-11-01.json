@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "alias": "boston",
+  "mode": "audit",
+  "recordedAt": "2026-11-01T01:44:07.356Z",
+  "exchanges": [
+    {
+      "url": "https://data.boston.gov/robots.txt",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "date": "Sun, 01 Nov 2026 01:44:07 GMT",
+        "content-type": "text/plain; charset=utf-8",
+        "content-length": "3070",
+        "connection": "keep-alive",
+        "server": "cloudflare",
+        "content-disposition": "inline; filename=robots.txt",
+        "last-modified": "Fri, 30 Oct 2026 15:24:40 GMT",
+        "cache-control": "public, max-age=43200",
+        "expires": "Sun, 01 Nov 2026 13:44:07 GMT",
+        "strict-transport-security": "max-age=31536000; includeSubdomains",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "cf-cache-status": "BYPASS",
+        "cf-ray": "a5373666d9abf865-ORD",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "body": "ClNpdGVtYXA6IGh0dHBzOi8vZGF0YS5ib3N0b24uZ292L3NpdGVtYXBfaW5kZXgueG1sCgpVc2VyLWFnZW50OiAqCkRpc2FsbG93OiAvY29udGFjdApEaXNhbGxvdzogL2RhdGFzZXQvYWN0aXZpdHkvKgpEaXNhbGxvdzogL2RhdGFzZXQvZ3JvdXBzLyoKRGlzYWxsb3c6IC9kYXRhc2V0L3Nob3djYXNlcy8qCkRpc2FsbG93OiAvZGF0YXNldC8qL2lzc3Vlcy8qCkRpc2FsbG93OiAvZGF0YXN0b3JlLyoKRGlzYWxsb3c6IC9kYXRhcmVxdWVzdC8qCkRpc2FsbG93OiAvaXNzdWVzLwpEaXNhbGxvdzogL3JldmlzaW9uLwpEaXNhbGxvdzogL3VzZXIvKgpEaXNhbGxvdzogL2FwaS8KRGlzYWxsb3c6IC9jZ2ktYmluCkRpc2FsbG93OiAvd3AtYWRtaW4vCkRpc2FsbG93OiAvd3AtY29udGVudC8KRGlzYWxsb3c6IC93cC1pbmNsdWRlcy8KRGlzYWxsb3c6IC8qLnBocCQKRGlzYWxsb3c6IC8qLmluYyQKRGlzYWxsb3c6IC8qLmd6JApEaXNhbGxvdzogLyoud212JApEaXNhbGxvdzogLyouY2dpJApEaXNhbGxvdzogLyoueGh0bWwkCkRpc2FsbG93OiAvYW0vCkRpc2FsbG93OiAvYXIvCkRpc2FsbG93OiAvYmcvCkRpc2FsbG93OiAvY2EKRGlzYWxsb3c6IC9jc19DWi8KRGlzYWxsb3c6IC9kYV9ESy8KRGlzYWxsb3c6IC9kZS8KRGlzYWxsb3c6IC9lbC8KRGlzYWxsb3c6IC9lbi8KRGlzYWxsb3c6IC9lbl9BVS8KRGlzYWxsb3c6IC9lbl9HQi8KRGlzYWxsb3c6IC9lcy8KRGlzYWxsb3c6IC9lc19BUi8KRGlzYWxsb3c6IC9ldS8KRGlzYWxsb3c6IC9mYV9JUi8KRGlzYWxsb3c6IC9maS8KRGlzYWxsb3c6IC9mci8KRGlzYWxsb3c6IC9nbC8KRGlzYWxsb3c6IC9oZS8KRGlzYWxsb3c6IC9oci8KRGlzYWxsb3c6IC9odS8KRGlzYWxsb3c6IC9pZC8KRGlzYWxsb3c6IC9pcy8KRGlzYWxsb3c6IC9pdC8KRGlzYWxsb3c6IC9qYS8KRGlzYWxsb3c6IC9rbS8KRGlzYWxsb3c6IC9rb19LUi8KRGlzYWxsb3c6IC9sdC8KRGlzYWxsb3c6IC9sdi8KRGlzYWxsb3c6IC9tay8KRGlzYWxsb3c6IC9tbl9NTi8KRGlzYWxsb3c6IC9teV9NTS8KRGlzYWxsb3c6IC9uYl9OTy8KRGlzYWxsb3c6IC9uZS8KRGlzYWxsb3c6IC9ubC8KRGlzYWxsb3c6IC9uby8KRGlzYWxsb3c6IC9wbC8KRGlzYWxsb3c6IC9wdF9CUi8KRGlzYWxsb3c6IC9wdF9QVC8KRGlzYWxsb3c6IC9yby8KRGlzYWxsb3c6IC9ydS8KRGlzYWxsb3c6IC9zay8KRGlzYWxsb3c6IC9zbC8KRGlzYWxsb3c6IC9zcS8KRGlzYWxsb3c6IC9zci8KRGlzYWxsb3c6IC9zcl9MYXRuLwpEaXNhbGxvdzogL3N2LwpEaXNhbGxvdzogL3RoLwpEaXNhbGxvdzogL3RsLwpEaXNhbGxvdzogL3RyLwpEaXNhbGxvdzogL3VrLwpEaXNhbGxvdzogL3VrX1VBLwpEaXNhbGxvdzogL3ZpLwpEaXNhbGxvdzogL3poX0NOLwpEaXNhbGxvdzogL3poX0hLLwpEaXNhbGxvdzogL3poX1RXLwpEaXNhbGxvdzogL3poX0hhbnRfVFcvCkRpc2FsbG93OiAvemhfSGFuc19DTi8KClVzZXItYWdlbnQ6ICoKQ3Jhd2wtZGVsYXk6IDEwCgpVc2VyLWFnZW50OiBKaWdzYXcKQWxsb3c6IC8KVXNlci1hZ2VudDogTGlua0NoZWNrCkFsbG93OiAvClVzZXItYWdlbnQ6IFNpdGVDaGVjay1zaXRlY3Jhd2wKQWxsb3c6IC8KVXNlci1hZ2VudDogU2l0ZWltcHJvdmVCb3QKQWxsb3c6IC8KVXNlci1hZ2VudDogU2l0ZWltcHJvdmVCb3QtQ3Jhd2xlcgpBbGxvdzogLwpVc2VyLWFnZW50OiBTaXRlaW1wcm92ZV9XM0NfVmFsaWRhdG9yCkFsbG93OiAvCgpVc2VyLWFnZW50OiAzNjBTcGlkZXIKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogQWhyZWZzQm90CkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IEJhaWR1c3BpZGVyCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IEJMRVhCb3QKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogQlViaU5HCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IEJ1Y2sKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogQ2Vuc3lzSW5zcGVjdApEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBEb3RCb3QKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogSFRUcmFjawpEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBKb3JnZWUKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogbGFyYmluCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IE1hdWlCb3QKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogTUoxMmJvdApEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBNb3psaWxhCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IE1TSUVDcmF3bGVyCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IE5lc3N1cwpEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBuZXRFc3RhdGUgTkUgQ3Jhd2xlcgpEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBOUEJvdApEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBQZXRhbGJvdApEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBTY3JhcHkKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogU2VtcnVzaEJvdApEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBTZW1ydXNoQm90LUJBCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IFNlbXJ1c2hCb3QtRlQKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogU2VtcnVzaEJvdC1PQ09CCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IFNlbXJ1c2hCb3QtU0kKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogU2VtcnVzaEJvdC1TV0EKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogU2V6bmFtQm90CkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IFNpdGVTbmFnZ2VyCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IHNwYm90CkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IFRlbGVwb3J0CkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IFRlbGVwb3J0UHJvCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IFhlbnUKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogV2ViQ29waWVyCkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IFdlYlJlYXBlcgpEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBXZWJTdHJpcHBlcgpEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBXZWJaSVAKRGlzYWxsb3c6IC8KVXNlci1hZ2VudDogWWFuZGV4CkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IFlhbmRleEJvdApEaXNhbGxvdzogLwpVc2VyLWFnZW50OiBaZWFsYm90CkRpc2FsbG93OiAvClVzZXItYWdlbnQ6IFp5Qk9SRwpEaXNhbGxvdzogLw==",
+      "bodyEncoding": "base64",
+      "timestamp": "2026-11-01T01:44:07.627Z",
+      "ms": 213
+    }
+  ],
+  "sanitized": [
+    "set-cookie",
+    "cookie"
+  ]
+}

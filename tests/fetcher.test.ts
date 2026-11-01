@@ -321,6 +321,20 @@ describe("events, replay timing, and serialization", () => {
     expect(waits).toEqual([100]);
   });
 
+  it("fails closed in replay mode when an exchange is absent instead of attempting network access", async () => {
+    const replay = new ReplayFetcher({
+      recording: {
+        schemaVersion: 1,
+        alias: "synthetic",
+        mode: "audit",
+        recordedAt: "2026-10-31T12:00:00Z",
+        exchanges: [],
+      },
+      timeScale: 0,
+    });
+    await expectCode(replay.runAudit(target(), (session) => session.robots()), "REPLAY_MISMATCH");
+  });
+
   it("serializes complete audits through the global queue", async () => {
     const order: string[] = [];
     let releaseFirst = (): void => undefined;

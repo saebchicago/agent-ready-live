@@ -23,7 +23,6 @@
         "etag": "W/\"0cb268a68e4fc210b4b7391392a87b19\"",
         "cache-control": "max-age=0, private, must-revalidate",
         "content-security-policy": "default-src 'self'; base-uri 'self'; frame-ancestors 'self' https: http:; frame-src 'self' https:; font-src 'self' https: data:; img-src 'self' https: http: data: blob:; object-src 'none'; script-src 'self' https: blob: 'unsafe-inline' 'unsafe-eval'; style-src 'self' https: blob: 'unsafe-inline'; worker-src 'self' blob:; connect-src 'self' https: http: wss: blob:; media-src 'self' blob: https:; form-action 'self' https:; report-uri /report-csp-violation",
-        "set-cookie": "_frontend_session=VVVkTEp5dmV5SDl6bmN5c3NRSG5QSkpXeEorRER5emVqdXhDeUswb2JFOTBOeXhadXR5ZUhrSHpuK2NpMXZ0M1hQMW8rU0Nwb1M5SmtobE1mWmFiZWM1ejFFcGlxelFLZUZtWndTWGlJTzY5VGhmdzd0cWhJNW0zY0dJN0YrNXphbXRQcXFuOG5iajVyZEw3cWxYWHJVRGFlTm05Z09TYkhMZG91N05YZEJud1BZNTNqNFJreWV2NnFabHQ3bzhlLS0waVEySWUxLy93OWRhM3NPY1JXT3VBPT0%3D--09056edc360550e63b20c91eeef945e2bb3856ce; path=/; secure; HttpOnly; SameSite=None",
         "x-runtime": "0.045908",
         "x-socrata-region": "aws-us-east-1-fedramp-prod",
         "x-socrata-requestid": "2834d9d492456d44f2101e474eb23621",
@@ -80,5 +79,9 @@
       "timestamp": "2026-11-01T01:44:13.216Z",
       "ms": 347
     }
+  ],
+  "sanitized": [
+    "set-cookie",
+    "cookie"
   ]
 }

@@ -69,6 +69,7 @@ export class CommandRouter {
     if (!this.takeCooldown(message.userId, command.name)) return undefined;
 
     if (command.name === "ping") return "pong (Agent-Ready Live is alive)";
+    if (command.name === "whois") return "I am Agent-Ready Live, a polite robot that checks public bot-facing files.";
     const game = this.game;
     if (game === undefined) return undefined;
 
@@ -122,7 +123,7 @@ export class CommandRouter {
   }
 
   private isSupported(name: string): boolean {
-    if (name === "ping") return true;
+    if (name === "ping" || name === "whois") return true;
     return this.game !== undefined && ["knock", "audit", "y", "n", "score", "board", "stop"].includes(name);
   }
 

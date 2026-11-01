@@ -106,6 +106,7 @@ export interface AuditSession {
 }
 
 export interface Fetcher {
+  readonly runtimeMode: "LIVE" | "REPLAY";
   runAudit<T>(
     target: Target,
     operation: (session: AuditSession) => Promise<T>,
@@ -128,6 +129,7 @@ export interface AuditRecording {
   alias: string;
   mode: TargetMode;
   recordedAt: string;
+  sanitized?: ["set-cookie", "cookie"];
   exchanges: RecordedExchange[];
 }
 
@@ -194,11 +196,14 @@ function responseHeaders(
 }
 
 function recorded(response: FetchResponse): RecordedExchange {
+  const headers = Object.fromEntries(
+    Object.entries(response.headers).filter(([name]) => !["cookie", "set-cookie"].includes(name.toLowerCase())),
+  );
   return {
     url: response.url,
     method: response.method,
     status: response.status,
-    headers: { ...response.headers },
+    headers,
     body: Buffer.from(response.body).toString("base64"),
     bodyEncoding: "base64",
     timestamp: response.timestamp,
@@ -646,6 +651,7 @@ async function queued<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 export class LiveFetcher implements Fetcher {
+  readonly runtimeMode = "LIVE" as const;
   private readonly resolver: Resolver;
   private readonly transport: Transport;
   private readonly now: () => number;
@@ -738,6 +744,7 @@ export interface ReplayFetcherOptions {
 }
 
 export class ReplayFetcher implements Fetcher {
+  readonly runtimeMode = "REPLAY" as const;
   private readonly fixturesDir: string;
   private readonly timeScale: number;
   private readonly onEvent: (event: FetcherEvent) => void;

@@ -60,6 +60,7 @@ export async function main(): Promise<void> {
     alias: target.alias,
     mode: target.mode,
     recordedAt,
+    sanitized: ["set-cookie", "cookie"],
     exchanges,
   };
   await mkdir(directory, { recursive: true });

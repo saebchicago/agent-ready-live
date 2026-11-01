@@ -103,14 +103,20 @@ export function checkK2(policy: RobotsPolicy, plannedUrls: readonly string[]): C
     return result("K2", "disallowed", `Access was not allowed because K1 was ${policy.kind}. Respected.`);
   }
   const allowed = plannedUrls.filter((url) => policy.isAllowed(url));
+  const blockedUrl = plannedUrls.find((url) => !policy.isAllowed(url));
+  const matchingLine = blockedUrl === undefined ? -1 : policy.matchingLine(blockedUrl);
+  const matchingRule = matchingLine > 0 ? policy.text.split(/\r?\n/u)[matchingLine - 1]?.trim() : undefined;
+  const blockedEvidence = blockedUrl !== undefined && matchingRule !== undefined
+    ? ` Blocked by robots.txt: ${matchingRule} (path ${new URL(blockedUrl).pathname}).`
+    : "";
   if (allowed.length === 0) {
-    return result("K2", "disallowed", "robots.txt disallows every planned path for AgentReadyLive. Respected.");
+    return result("K2", "disallowed", `robots.txt disallows every planned path for AgentReadyLive. Respected.${blockedEvidence}`);
   }
   if (allowed.length < plannedUrls.length || policy.crawlDelayMs > 0) {
     return result(
       "K2",
       "allowed_with_limits",
-      `${allowed.length} of ${plannedUrls.length} planned paths allowed; declared limits are respected.`,
+      `${allowed.length} of ${plannedUrls.length} planned paths allowed; declared limits are respected.${blockedEvidence}`,
     );
   }
   return result("K2", "allowed", `All ${plannedUrls.length} planned paths are allowed.`);

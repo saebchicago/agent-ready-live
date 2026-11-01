@@ -72,6 +72,9 @@ export class GameEngine {
   private nextAuditId = 1;
 
   constructor(private readonly options: GameEngineOptions) {
+    if (options.fetcher.runtimeMode !== options.runtimeMode) {
+      throw new Error(`Fetcher mode ${options.fetcher.runtimeMode} cannot run in ${options.runtimeMode} mode`);
+    }
     this.store = options.store ?? new GameStateStore(options.runtimeMode);
     this.now = options.now ?? Date.now;
     this.sleep = options.sleep ?? ((ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms)));

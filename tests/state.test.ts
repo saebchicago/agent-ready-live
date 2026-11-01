@@ -123,12 +123,22 @@ describe("gameReducer", () => {
 });
 
 describe("GameEngine terms replay", () => {
+  it("refuses a live fetcher in replay mode before any audit can run", () => {
+    let calls = 0;
+    expect(() => new GameEngine({
+      runtimeMode: "REPLAY",
+      targets: [target("safe")],
+      fetcher: { runtimeMode: "LIVE", runAudit: async <T>() => { calls += 1; throw new Error("live transport must not run"); } },
+    })).toThrow("cannot run in REPLAY mode");
+    expect(calls).toBe(0);
+  });
+
   it("shows the featured terms door without invoking its fetcher", async () => {
     let calls = 0;
     const game = new GameEngine({
       runtimeMode: "REPLAY",
       targets: [target("michigan")],
-      fetcher: { runAudit: async () => { calls += 1; throw new Error("no request expected"); } },
+      fetcher: { runtimeMode: "REPLAY", runAudit: async () => { calls += 1; throw new Error("no request expected"); } },
       now: () => baseTime,
       sleep: async () => undefined,
       doorClosedMs: 0,
