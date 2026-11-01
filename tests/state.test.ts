@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Target } from "../src/config.js";
-import { GameEngine } from "../src/server/game.js";
+import { DEFAULT_BET_WINDOW_MS, GameEngine, makeVerdictText } from "../src/server/game.js";
 import {
   CORRECT_BET_POINTS,
   LEADERBOARD_TTL_MS,
@@ -95,9 +95,9 @@ describe("gameReducer", () => {
     state = gameReducer(state, {
       type: "VERDICT",
       now: baseTime,
-      score: 90,
-      text: "90/100 | Sampled 3 | Probed 2026-10-31 | Rubric v1 | Not a ranking of agency quality",
+      text: "Sampled 3 | Probed 2026-10-31 | Rubric v1 | Not a ranking of agency quality",
       reasons: ["K2:allowed"],
+      checks: [{ id: "K2", outcome: "allowed" }],
       sampledEntries: 3,
       probedOn: "2026-10-31",
     });
@@ -123,6 +123,21 @@ describe("gameReducer", () => {
 });
 
 describe("GameEngine terms replay", () => {
+  it("uses a 20-second default betting window", () => {
+    expect(DEFAULT_BET_WINDOW_MS).toBe(20_000);
+  });
+
+  it("replaces a readiness score with the robots rule explanation when the catalog is disallowed", () => {
+    const disclosure = "Sampled 0 | Probed 2026-11-01 | Rubric v1 | Not a ranking of agency quality";
+    const text = makeVerdictText("audit", [{
+      id: "K2",
+      outcome: "disallowed",
+      label: "Verified",
+      evidence: "robots.txt disallows every planned path. Blocked by robots.txt: Disallow: /api/ (path /api/catalog).",
+    }], disclosure);
+    expect(text).toBe(`Not scored: robots.txt disallows the catalog (Disallow: /api/)\n${disclosure}`);
+  });
+
   it("refuses a live fetcher in replay mode before any audit can run", () => {
     let calls = 0;
     expect(() => new GameEngine({

@@ -35,7 +35,7 @@ export async function runDemo(smoke = false): Promise<void> {
     runtimeMode: "REPLAY",
     targets,
     fetcher,
-    betWindowMs: smoke ? 5 : 2_000,
+    betWindowMs: smoke ? 5 : 20_000,
     doorClosedMs: smoke ? 5 : 3_000,
     verdictMs: smoke ? 5 : 2_000,
     mvpMs: smoke ? 5 : 500,

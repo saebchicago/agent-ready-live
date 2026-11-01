@@ -29,6 +29,7 @@ const NEGATIVE_OUTCOMES = new Set([
   "empty_or_template",
   "impossible",
 ]);
+export const DEFAULT_BET_WINDOW_MS = 20_000;
 
 class AuditStoppedError extends Error {}
 
@@ -79,7 +80,7 @@ export class GameEngine {
     this.now = options.now ?? Date.now;
     this.sleep = options.sleep ?? ((ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms)));
     this.announce = options.announce ?? (() => undefined);
-    this.betWindowMs = options.betWindowMs ?? 8_000;
+    this.betWindowMs = options.betWindowMs ?? DEFAULT_BET_WINDOW_MS;
     this.doorClosedMs = options.doorClosedMs ?? 10_000;
     this.verdictMs = options.verdictMs ?? 10_000;
     this.mvpMs = options.mvpMs ?? 5_000;
@@ -138,11 +139,11 @@ export class GameEngine {
     this.store.dispatch({ type: "PRUNE", now: this.now() });
     const state = this.store.getState();
     const rows = [...state.leaderboards.knock, ...state.leaderboards.audit]
-      .sort((left, right) => right.score - left.score)
+      .sort((left, right) => right.probedOn.localeCompare(left.probedOn))
       .slice(0, 3);
     return rows.length === 0
       ? "Board is empty. Run a knock or audit first."
-      : rows.map((row) => `${row.targetAlias} ${row.score}`).join(" | ");
+      : rows.map((row) => `${row.targetAlias}: ${row.checks.map(({ id, outcome }) => `${id} ${humanOutcome(outcome)}`).join(", ")}`).join(" | ");
   }
 
   stop(): void {
@@ -238,16 +239,17 @@ export class GameEngine {
 
       const grade = gradeAudit(target.mode, audit.checks, audit.sampledEntries, audit.probedOn);
       const reasons = reasonCodes(audit.checks);
+      const verdictText = makeVerdictText(target.mode, audit.checks, grade.verdict);
       this.store.dispatch({
         type: "VERDICT",
         now: this.now(),
-        score: grade.score,
-        text: grade.verdict,
+        text: verdictText,
         reasons,
+        checks: audit.checks.map(({ id, outcome }) => ({ id, outcome })),
         sampledEntries: audit.sampledEntries,
         probedOn: audit.probedOn,
       });
-      await this.say(`${target.alias}: ${grade.score}/100. ${reasons.join(", ")}.`);
+      await this.say(`${target.alias}: ${verdictText}`);
       await this.sleep(this.verdictMs);
       this.assertRunning();
       const beforeMvp = this.store.getState().revision;
@@ -284,6 +286,17 @@ function correctChoice(check: CheckResult): BetChoice {
   if (check.id === "K3") return check.outcome === "silent" ? "n" : "y";
   if (check.id === "D2") return check.outcome === "url_or_spdx" ? "y" : "n";
   return NEGATIVE_OUTCOMES.has(check.outcome) ? "n" : "y";
+}
+
+export function makeVerdictText(mode: TargetMode, checks: readonly CheckResult[], disclosure: string): string {
+  const k2 = checks.find(({ id }) => id === "K2");
+  if (mode === "audit" && k2?.outcome === "disallowed") {
+    const rule = k2.evidence.match(/Blocked by robots\.txt: (.+?) \(path /u)?.[1];
+    if (rule !== undefined) {
+      return `Not scored: robots.txt disallows the catalog (${rule})\n${disclosure}`;
+    }
+  }
+  return disclosure;
 }
 
 function reasonCodes(checks: readonly CheckResult[]): string[] {

@@ -74,9 +74,9 @@ export interface DoorClosedState {
 }
 
 export interface VerdictState {
-  score: number;
   text: string;
   reasons: string[];
+  checks: Array<Pick<CheckResult, "id" | "outcome">>;
   correctBettors: number;
 }
 
@@ -90,7 +90,7 @@ export interface LeaderboardRow {
   targetAlias: string;
   targetName: string;
   targetMode: TargetMode;
-  score: number;
+  checks: Array<Pick<CheckResult, "id" | "outcome">>;
   sampledEntries: number;
   probedOn: string;
   rubricVersion: "Rubric v1";
@@ -144,9 +144,9 @@ export type GameAction =
   | (TimedAction & { type: "DOOR_CLOSED"; evidence: string; sourceUrl: string })
   | (TimedAction & {
       type: "VERDICT";
-      score: number;
       text: string;
       reasons: string[];
+      checks: Array<Pick<CheckResult, "id" | "outcome">>;
       sampledEntries: number;
       probedOn: string;
     })
@@ -191,7 +191,7 @@ function pruneLeaderboards(state: GameState, now: number): GameState {
 
 function ranked(rows: LeaderboardRow[]): LeaderboardRow[] {
   return [...rows]
-    .sort((left, right) => right.score - left.score || right.probedOn.localeCompare(left.probedOn))
+    .sort((left, right) => right.probedOn.localeCompare(left.probedOn))
     .slice(0, 10);
 }
 
@@ -362,7 +362,7 @@ export function gameReducer(input: GameState, action: GameAction): GameState {
         targetAlias: state.currentAudit.targetAlias,
         targetName: state.currentAudit.targetName,
         targetMode: state.currentAudit.targetMode,
-        score: action.score,
+        checks: action.checks,
         sampledEntries: action.sampledEntries,
         probedOn: action.probedOn,
         rubricVersion: "Rubric v1",
@@ -379,9 +379,9 @@ export function gameReducer(input: GameState, action: GameAction): GameState {
         bet: undefined,
         waiting: undefined,
         verdict: {
-          score: action.score,
           text: action.text,
           reasons: action.reasons.slice(0, 3),
+          checks: action.checks,
           correctBettors: state.currentAudit.correctBettors.length,
         },
         leaderboards: {

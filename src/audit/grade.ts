@@ -56,6 +56,6 @@ export function gradeAudit(
   const sampleText = sampledEntries === 1 ? "Sampled 1" : `Sampled ${sampledEntries}`;
   return {
     score,
-    verdict: `${score}/100 | ${sampleText} | Probed ${probedOn} | Rubric v1 | Not a ranking of agency quality`,
+    verdict: `${sampleText} | Probed ${probedOn} | Rubric v1 | Not a ranking of agency quality`,
   };
 }

@@ -28,9 +28,12 @@ function renderRows(id: string, rows: readonly LeaderboardRow[]): void {
     rank.textContent = String(index + 1).padStart(2, "0");
     const name = document.createElement("strong");
     name.textContent = row.targetAlias;
+    const badges = document.createElement("span");
+    badges.className = "board-checks";
+    badges.textContent = row.checks.map(({ id, outcome }) => `${id} ${outcome.replaceAll("_", " ")}`).join(" · ");
     const meta = document.createElement("span");
-    meta.textContent = `${row.score}/100 · N=${row.sampledEntries} · ${row.probedOn} · ${row.rubricVersion}`;
-    item.append(rank, name, meta);
+    meta.textContent = `Sampled ${row.sampledEntries} | Probed ${row.probedOn} | ${row.rubricVersion} | Not a ranking of agency quality`;
+    item.append(rank, name, badges, meta);
     return item;
   });
   if (elements.length === 0) {
@@ -138,9 +141,15 @@ function render(next: GameState): void {
 
   visible("verdict-panel", next.phase === "verdict");
   if (next.verdict !== undefined) {
-    text("verdict-score", next.verdict.score);
     text("verdict-line", next.verdict.text);
     text("correct-bettors", `${next.verdict.correctBettors} correct bettors`);
+    const badges = next.verdict.checks.map(({ id, outcome }) => {
+      const item = document.createElement("span");
+      item.className = "verdict-check-badge";
+      item.textContent = `${id} ${outcome.replaceAll("_", " ")}`;
+      return item;
+    });
+    element("verdict-checks").replaceChildren(...badges);
     const reasons = next.verdict.reasons.map((reason) => {
       const item = document.createElement("li");
       item.textContent = reason;

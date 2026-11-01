@@ -153,13 +153,12 @@ h1 span { color: var(--lime); }
 .door-card a { color: var(--cyan); font-size: 16px; }
 .evidence { color: #d2e1ea; font-size: 18px; line-height: 1.42; }
 .verdict-card { position: relative; padding-left: 200px; }
-.score-ring { position: absolute; left: 27px; top: 52px; width: 140px; height: 140px; display: grid; place-content: center; border: 8px solid var(--lime); border-radius: 50%; }
-.score-ring span { font-size: 50px; font-weight: 950; line-height: .8; }
-.score-ring small { text-align: center; color: #9eb2c0; }
 .reason-list { display: flex; gap: 10px; padding: 0; list-style: none; }
 .reason-list li { padding: 8px 12px; border-radius: 8px; background: rgba(80,230,255,.12); color: var(--cyan); font-weight: 800; }
+.verdict-checks { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
+.verdict-check-badge { padding: 6px 9px; border: 1px solid rgba(184,255,101,.4); border-radius: 8px; color: var(--lime); font-size: 12px; font-weight: 800; }
 .correct-bettors { font-size: 21px; font-weight: 800; }
-.verdict-line { color: #a9becc; font-size: 15px; }
+.verdict-line { color: #a9becc; font-size: 15px; white-space: pre-line; }
 .error-line { color: var(--coral); font-size: 20px; font-weight: 800; }
 .mvp-card { border-color: rgba(184,255,101,.55); background: linear-gradient(135deg, rgba(184,255,101,.13), rgba(80,230,255,.07)); }
 .mvp-card h3 { color: var(--lime); font-size: 52px; }
@@ -180,8 +179,10 @@ h1 span { color: var(--lime); }
 .boards { position: absolute; left: 600px; right: 40px; bottom: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .board { min-height: 165px; padding: 19px 23px; border: 1px solid var(--line); border-radius: 20px; background: rgba(7,19,31,.91); }
 .board-row { display: grid; grid-template-columns: 40px 130px 1fr; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid rgba(255,255,255,.06); }
+.board-checks { color: var(--cyan); font-size: 12px; }
 .board-row .rank { color: var(--cyan); font-family: ui-monospace, monospace; }
 .board-row > span:last-child { color: #95adbc; font-size: 12px; }
+.board-row > span:last-child { grid-column: 2 / -1; }
 .empty-row { color: #728a99; }
 
 [hidden] { display: none !important; }
