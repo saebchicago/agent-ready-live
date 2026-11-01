@@ -1,5 +1,6 @@
 import { lookup as dnsLookup } from "node:dns/promises";
-import { isIP } from "node:net";
+import { isIP, type LookupFunction } from "node:net";
+import type { LookupAddress } from "node:dns";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { readFile, readdir } from "node:fs/promises";
@@ -55,8 +56,9 @@ export interface RequestTickerEvent {
   type: "request";
   method: HttpMethod;
   path: string;
-  status: number;
+  status: number | "UNREACHABLE";
   ms: number;
+  errorCode?: string;
 }
 
 export interface CrawlDelayEvent {
@@ -288,6 +290,28 @@ const defaultResolver: Resolver = async (hostname) => {
   return answers.map(({ address, family }) => ({ address, family: family as 4 | 6 }));
 };
 
+/** A single-address DNS lookup that supports both Node lookup callback forms. */
+export function createPinnedLookup(address: ResolvedAddress): LookupFunction {
+  return (_hostname, options, callback) => {
+    // Validate at the point of connection as well as when DNS is initially resolved.
+    if (!isPublicAddress(address.address)) {
+      throw new FetcherError("PRIVATE_IP", `Resolved address ${address.address} is not public`);
+    }
+    if (typeof options === "object" && options.all) {
+      (callback as (error: NodeJS.ErrnoException | null, addresses: LookupAddress[]) => void)(
+        null,
+        [{ address: address.address, family: address.family }],
+      );
+      return;
+    }
+    (callback as (error: NodeJS.ErrnoException | null, address: string, family: number) => void)(
+      null,
+      address.address,
+      address.family,
+    );
+  };
+}
+
 export const nodeTransport: Transport = async (input) => {
   const started = Date.now();
   const requester = input.url.protocol === "https:" ? httpsRequest : httpRequest;
@@ -306,9 +330,7 @@ export const nodeTransport: Transport = async (input) => {
         method: input.method,
         headers: input.headers,
         servername: normalizedHostname(input.url),
-        lookup: (_hostname, _options, callback) => {
-          callback(null, input.address.address, input.address.family);
-        },
+        lookup: createPinnedLookup(input.address),
       },
       (incoming) => {
         const chunks: Buffer[] = [];
@@ -351,8 +373,8 @@ export const nodeTransport: Transport = async (input) => {
       request.destroy();
       fail(new FetcherError("TIMEOUT", `Request timed out after ${input.timeoutMs} ms`));
     }, input.timeoutMs);
-    request.once("error", (error) => {
-      fail(new FetcherError("NETWORK_ERROR", "Network request failed", { cause: error }));
+    request.once("error", (error: NodeJS.ErrnoException) => {
+      fail(new FetcherError("NETWORK_ERROR", `Network request failed (${error.code ?? "unknown"})`, { cause: error }));
     });
     request.end();
   });
@@ -551,12 +573,22 @@ class GuardedSession implements AuditSession {
       try {
         response = await this.options.backend.next(url, method);
       } catch (error) {
+        const cause = error instanceof Error ? error.cause : undefined;
+        const errorWithCode = typeof error === "object" && error !== null && "code" in error ? error : undefined;
+        const codedCause = typeof cause === "object" && cause !== null && "code" in cause ? cause : undefined;
+        const underlyingCode = codedCause !== undefined
+          ? String(codedCause.code)
+          : errorWithCode !== undefined
+            ? String(errorWithCode.code)
+            : undefined;
+        const errorCode = underlyingCode ?? (error instanceof FetcherError ? error.code : "NETWORK_ERROR");
         this.options.onEvent({
           type: "request",
           method,
           path: `${url.pathname}${url.search}`,
-          status: 0,
+          status: "UNREACHABLE",
           ms: Math.max(0, this.options.now() - started),
+          errorCode,
         });
         this.lastRequestFinishedAtByHost.set(url.hostname, this.options.now());
         throw error;

@@ -32,6 +32,22 @@
     "notes": "Comparator. City runs an official MCP server for open data (Fast Company, Mar 2026)."
   },
   {
+    "alias": "nyc",
+    "name": "NYC Open Data",
+    "host": "data.cityofnewyork.us",
+    "mode": "audit",
+    "catalogUrl": "https://data.cityofnewyork.us/data.json",
+    "dialect": "dcat",
+    "tos": {
+      "status": "allowed-with-conditions",
+      "sourceUrl": "https://www.nyc.gov/main/terms-of-use",
+      "evidence": "NYC Admin Code 23-502(d) (Local Law 11 of 2012): public data sets available without registration, license or use restrictions; source and version attribution may be required. NYC.gov Terms of Use have no automated-access clause; Section I bars disrupting servers (read 2026-10-31).",
+      "reviewedOn": "2026-10-31"
+    },
+    "tosReviewed": true,
+    "notes": "NYC Open Data DCAT catalog. Attribute dataset source and version where required."
+  },
+  {
     "alias": "chicago",
     "name": "Chicago Data Portal",
     "host": "data.cityofchicago.org",

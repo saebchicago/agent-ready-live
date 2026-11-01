@@ -77,7 +77,7 @@ function renderTicker(currentState: GameState): void {
     const path = document.createElement("span");
     path.textContent = request.path;
     const result = document.createElement("span");
-    result.textContent = `${request.status} · ${request.ms}ms`;
+    result.textContent = `${request.status === "UNREACHABLE" ? "UNREACHABLE" : request.status} · ${request.ms}ms`;
     row.append(method, path, result);
     return row;
   });

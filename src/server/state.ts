@@ -58,7 +58,7 @@ export interface ScoreState {
 export interface RequestTickerItem {
   method: HttpMethod;
   path: string;
-  status: number;
+  status: number | "UNREACHABLE";
   ms: number;
 }
 

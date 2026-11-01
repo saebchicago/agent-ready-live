@@ -5,6 +5,7 @@ import {
   LiveFetcher,
   MAX_RESPONSE_BYTES,
   ReplayFetcher,
+  createPinnedLookup,
   isPublicAddress,
   type AuditRecording,
   type FetchResponse,
@@ -79,6 +80,30 @@ async function expectCode(promise: Promise<unknown>, code: string): Promise<void
 }
 
 describe("SSRF and protocol guards", () => {
+  it("returns the pinned address in Node's all:true lookup callback shape", () => {
+    let result: unknown;
+    const lookup = createPinnedLookup({ address: "93.184.216.34", family: 4 });
+    lookup("example.test", { all: true }, ((error: unknown, addresses: unknown) => {
+      result = { error, addresses };
+    }) as never);
+    expect(result).toEqual({ error: null, addresses: [{ address: "93.184.216.34", family: 4 }] });
+  });
+
+  it("returns the pinned address in Node's all:false lookup callback shape", () => {
+    let result: unknown;
+    const lookup = createPinnedLookup({ address: "93.184.216.34", family: 4 });
+    lookup("example.test", { all: false }, ((error: unknown, address: unknown, family: unknown) => {
+      result = { error, address, family };
+    }) as never);
+    expect(result).toEqual({ error: null, address: "93.184.216.34", family: 4 });
+  });
+
+  it("rechecks the pinned address before returning it to Node", () => {
+    const lookup = createPinnedLookup({ address: "127.0.0.1", family: 4 });
+    expect(() => lookup("example.test", { all: true }, (() => undefined) as never))
+      .toThrowError(expect.objectContaining({ code: "PRIVATE_IP" }));
+  });
+
   it("refuses targets that do not exactly match the configured allowlist", async () => {
     const fetcher = live(sequence([]), { allowlist: [] });
     await expectCode(fetcher.runAudit(target(), (session) => session.robots()), "TARGET_NOT_ALLOWLISTED");
@@ -207,6 +232,25 @@ describe("budget, stop, robots, and body guards", () => {
 });
 
 describe("events, replay timing, and serialization", () => {
+  it("emits UNREACHABLE with the underlying network error code", async () => {
+    const events: unknown[] = [];
+    const resolver = async (): Promise<never> => {
+      const error = new Error("synthetic DNS failure") as NodeJS.ErrnoException;
+      error.code = "ENOTFOUND";
+      throw error;
+    };
+    const fetcher = live(sequence([]), { resolver, onEvent: (event) => events.push(event) });
+    await expect(fetcher.runAudit(target(), (session) => session.robots())).rejects.toMatchObject({ code: "ENOTFOUND" });
+    expect(events).toEqual([{
+      type: "request",
+      method: "GET",
+      path: "/robots.txt",
+      status: "UNREACHABLE",
+      ms: expect.any(Number),
+      errorCode: "ENOTFOUND",
+    }]);
+  });
+
   it("keeps same-host request concurrency at one within an audit", async () => {
     let active = 0;
     let maximum = 0;
