@@ -15,6 +15,7 @@
     "replay": "npm run build:overlay && node --import tsx src/replay.ts",
     "demo": "npm run build:overlay && node --import tsx scripts/demo.ts",
     "report": "node --import tsx scripts/report.ts",
+    "note": "node --import tsx scripts/note.ts",
     "check-secrets": "node --import tsx scripts/check-secrets.ts",
     "build:overlay": "vite build --config overlay/vite.config.ts",
     "record": "node --env-file=.env --import tsx scripts/record.ts"

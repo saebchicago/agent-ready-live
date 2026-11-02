@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { targets } from "../src/config.js";
 import { runAuditChecks } from "../src/audit/checks.js";
+import { censusRequestUrls } from "../src/audit/census.js";
 import {
   LiveFetcher,
   type AuditRecording,
@@ -42,6 +43,7 @@ export async function main(): Promise<void> {
   await assertRecordingPathAvailable(path);
 
   const exchanges: RecordedExchange[] = [];
+  let censusError: string | undefined;
   const fetcher = new LiveFetcher({
     repoUrl: requiredEnv("REPO_URL"),
     contactEmail: requiredEnv("CONTACT_EMAIL"),
@@ -54,7 +56,32 @@ export async function main(): Promise<void> {
       }
     },
   });
-  const audit = await runAuditChecks(target, fetcher);
+  let audit: Awaited<ReturnType<typeof runAuditChecks>> | undefined;
+  if (target.mode === "catalog-census") {
+    await fetcher.runAudit(target, async (session) => {
+      let policy;
+      try {
+        policy = await session.robots();
+      } catch (error) {
+        censusError = error instanceof Error ? error.message : "Robots request failed safely.";
+        return;
+      }
+      if (policy.stopped) return;
+      const [callA, callB] = censusRequestUrls(target);
+      for (const url of [callA, callB]) {
+        if (!policy.isAllowed(url)) break;
+        try {
+          const response = await session.request(url, "GET");
+          if (response.status >= 400) break;
+        } catch (error) {
+          censusError = error instanceof Error ? error.message : "Census request failed safely.";
+          break;
+        }
+      }
+    });
+  } else {
+    audit = await runAuditChecks(target, fetcher);
+  }
   const recording: AuditRecording = {
     schemaVersion: 1,
     alias: target.alias,
@@ -62,6 +89,7 @@ export async function main(): Promise<void> {
     recordedAt,
     sanitized: ["set-cookie", "cookie"],
     exchanges,
+    ...(censusError === undefined ? {} : { censusError }),
   };
   await mkdir(directory, { recursive: true });
   try {
@@ -73,7 +101,8 @@ export async function main(): Promise<void> {
     throw error;
   }
   console.log(`Saved ${exchanges.length} raw exchanges to ${path}`);
-  console.log(`Checks: ${audit.checks.map(({ id, outcome }) => `${id}=${outcome}`).join(", ")}`);
+  if (audit !== undefined) console.log(`Checks: ${audit.checks.map(({ id, outcome }) => `${id}=${outcome}`).join(", ")}`);
+  if (censusError !== undefined) console.log(`Census stopped safely: ${censusError}`);
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

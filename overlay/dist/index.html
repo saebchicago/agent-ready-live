@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent-Ready Live</title>
-    <script type="module" crossorigin src="/assets/index-BH_GW5TQ.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BTx8GAJw.css">
+    <script type="module" crossorigin src="/assets/index-CI4XLvNG.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DuUr04Hn.css">
   </head>
   <body>
     <div id="stage">
@@ -59,6 +59,18 @@
               <span>!audit boston</span>
             </div>
             <p class="hint">Chat predicts what the site will say. The robot always respects the answer.</p>
+            <p id="global-context" class="global-context" hidden>Elsewhere: France's national portal offers an MCP server for agents; the EU requires API and bulk access for high-value datasets.</p>
+            <section id="national-lens" class="national-lens">
+              <p class="card-label">NATIONAL LENS</p>
+              <p id="national-total">National census not recorded yet.</p>
+              <p id="national-licenses"></p>
+              <p id="national-no-license"></p>
+              <p id="national-formats"></p>
+              <p id="national-publishers"></p>
+              <p id="national-matched-publishers"></p>
+              <p id="national-notes"></p>
+              <p id="national-probed">Probed not available | Not a ranking</p>
+            </section>
           </section>
 
           <section id="active-panel" class="panel active-panel" hidden>
@@ -88,6 +100,12 @@
               <h3>We do not knock where automation is prohibited.</h3>
               <p id="terms-evidence" class="evidence"></p>
               <a id="terms-source" rel="noreferrer">Terms source</a>
+              <p id="terms-origin" class="evidence"></p>
+              <p id="terms-ladder-placement" class="ladder-placement"></p>
+              <div id="terms-door-ladder" class="door-ladder"></div>
+              <p id="terms-side-door" class="evidence"></p>
+              <p id="platform-terms-message" class="platform-terms-message" hidden>Publisher says open. Platform says no AI harvesting.</p>
+              <a id="side-door-link" rel="noreferrer" hidden></a>
               <strong>Zero requests sent.</strong>
             </div>
 
@@ -97,7 +115,15 @@
               <ul id="reason-list" class="reason-list"></ul>
               <p id="correct-bettors" class="correct-bettors"></p>
               <p id="verdict-line" class="verdict-line"></p>
+              <p id="ladder-placement" class="ladder-placement"></p>
+              <div id="door-ladder" class="door-ladder"></div>
+              <p id="verdict-side-door" class="evidence"></p>
+              <div id="fixit-card" class="fixit-card" hidden></div>
               <p id="error-line" class="error-line"></p>
+            </div>
+            <div id="explainer-card" class="explainer-card" hidden>
+              <strong id="explainer-title"></strong>
+              <p id="explainer-what"></p><p id="explainer-fix"></p><p id="explainer-standard"></p>
             </div>
 
             <div id="mvp-panel" class="event-card mvp-card" hidden>

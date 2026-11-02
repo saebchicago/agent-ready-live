@@ -98,6 +98,7 @@ describe("gameReducer", () => {
       text: "Knock only: no catalog sampled | Probed 2026-10-31 | Rubric v1 | Not a ranking of agency quality",
       reasons: ["K2:allowed"],
       checks: [{ id: "K2", outcome: "allowed" }],
+      ladderPlacement: { step: "Open with gaps", evidence: "sample" },
       sampledEntries: 3,
       probedOn: "2026-10-31",
     });

@@ -29,7 +29,12 @@
       "reviewedOn": "2026-10-31"
     },
     "tosReviewed": true,
-    "notes": "Comparator. City runs an official MCP server for open data (Fast Company, Mar 2026)."
+    "notes": "Comparator. City runs an official MCP server for open data (Fast Company, Mar 2026).",
+    "sideDoor": {
+      "label": "City of Boston Open Context MCP server",
+      "evidence": "The Boston robots file blocks /api/. The City of Boston Open Context MCP server is the side door.",
+      "readDate": "2026-11-02"
+    }
   },
   {
     "alias": "nyc",
@@ -89,7 +94,12 @@
       "reviewedOn": "2026-10-31"
     },
     "tosReviewed": true,
-    "notes": "NO network requests. The agent stops at the door and shows the terms finding. Applies until DTMB grants written permission. Same treatment for data.michigan.gov, gis-michigan.opendata.arcgis.com and other state-run portals until their terms are confirmed."
+    "notes": "NO network requests. The agent stops at the door and shows the terms finding. Applies until DTMB grants written permission. Same treatment for data.michigan.gov, gis-michigan.opendata.arcgis.com and other state-run portals until their terms are confirmed.",
+    "sideDoor": {
+      "label": "No approved agent route found",
+      "evidence": "Question sent to the Michigan Center for Data and Analytics; awaiting reply.",
+      "readDate": "2026-11-02"
+    }
   },
   {
     "alias": "twitch",
@@ -103,6 +113,64 @@
       "reviewedOn": "2026-10-31"
     },
     "tosReviewed": true,
-    "notes": "NO network requests to twitch.tv pages. Fun on-stream moment: the agent declines to knock on Twitch itself and explains why."
+    "notes": "NO network requests to twitch.tv pages. Fun on-stream moment: the agent declines to knock on Twitch itself and explains why.",
+    "sideDoor": {
+      "label": "Official Twitch API and EventSub",
+      "evidence": "This bot uses the official Twitch API and EventSub.",
+      "readDate": "2026-11-02"
+    }
+  },
+  {
+    "alias": "samgov",
+    "name": "SAM.gov",
+    "host": "sam.gov",
+    "mode": "knock",
+    "tos": {
+      "status": "prohibited",
+      "sourceUrl": "https://sam.gov/content/about/terms-of-use",
+      "evidence": "Terms prohibit automated data gathering and web scraping tools (read 2026-11-01)",
+      "reviewedOn": "2026-11-01"
+    },
+    "sideDoor": {
+      "label": "Official SAM.gov APIs at open.gsa.gov",
+      "url": "https://open.gsa.gov/api/",
+      "evidence": "Official SAM.gov APIs.",
+      "readDate": "2026-11-02"
+    },
+    "tosReviewed": true,
+    "notes": "No audit requests. Terms gate only."
+  },
+  {
+    "alias": "datagov",
+    "name": "Data.gov National Catalog",
+    "host": "catalog.data.gov",
+    "mode": "catalog-census",
+    "tos": {
+      "status": "allowed-with-conditions",
+      "sourceUrl": "https://data.gov/privacy-policy",
+      "evidence": "robots.txt has no Disallow rules and sets Crawl-delay 10 (read 2026-11-01). Catalog includes non-federal catalogs harvested from city and state data.json feeds; each dataset carries its own terms.",
+      "reviewedOn": "2026-11-01"
+    },
+    "tosReviewed": true,
+    "notes": "Census only: robots.txt plus at most two package_search facet calls."
+  },
+  {
+    "alias": "arcgis-hub",
+    "name": "ArcGIS Hub",
+    "host": "hub.arcgis.com",
+    "mode": "knock",
+    "tos": {
+      "status": "prohibited",
+      "sourceUrl": "https://www.esri.com/content/dam/esrisites/en-us/media/legal/terms-and-conditions/website-terms.pdf",
+      "evidence": "Esri Website Properties Terms (G577, Aug 14 2025) 2.3(e) bar systematic harvesting, including for AI tools; 2.3(a) limits access to a browser or Esri products. Conservative reading (read 2026-11-02).",
+      "reviewedOn": "2026-11-02"
+    },
+    "sideDoor": {
+      "label": "Each publisher's own DCAT-US feed, which data.gov already harvests",
+      "evidence": "Each publisher's own DCAT-US feed, which data.gov already harvests",
+      "readDate": "2026-11-02"
+    },
+    "tosReviewed": true,
+    "notes": "T0 only. Zero requests."
   }
 ]

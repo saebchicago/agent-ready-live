@@ -170,6 +170,19 @@ h1 span { color: var(--lime); }
 .correct-bettors { font-size: 21px; font-weight: 800; }
 .verdict-line { color: #a9becc; font-size: 15px; white-space: pre-line; }
 .error-line { color: var(--coral); font-size: 20px; font-weight: 800; }
+.door-ladder { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.door-ladder span { padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; color: #9ab0bf; font-size: 12px; }
+.door-ladder span[data-active="true"] { border-color: var(--lime); color: var(--ink); background: var(--lime); font-weight: 900; }
+.ladder-placement { color: var(--lime); font-weight: 800; }
+.global-context { color: #a9becc; font-size: 19px; line-height: 1.35; }
+.national-lens { margin-top: 16px; padding: 12px 16px; border: 1px solid rgba(80,230,255,.3); border-radius: 14px; background: rgba(80,230,255,.05); font-size: 13px; line-height: 1.35; }
+.national-lens p { margin: 4px 0; }
+.national-lens p:last-child { color: var(--cyan); font-weight: 800; }
+.platform-terms-message { margin: 12px 0; color: var(--amber); font-size: 24px; font-weight: 900; }
+.fixit-card { margin-top: 9px; padding: 10px 13px; border: 1px solid rgba(255,204,102,.4); border-radius: 10px; color: #f6ddad; font-size: 13px; }
+.fixit-card p { margin: 4px 0; }
+.explainer-card { position: absolute; z-index: 5; right: 72px; bottom: 220px; width: 720px; padding: 18px 22px; border: 1px solid rgba(80,230,255,.55); border-radius: 16px; background: rgba(4,13,23,.97); box-shadow: 0 12px 40px #0008; }
+.explainer-card p { margin: 8px 0 0; color: #d2e1ea; font-size: 15px; }
 .mvp-card { border-color: rgba(184,255,101,.55); background: linear-gradient(135deg, rgba(184,255,101,.13), rgba(80,230,255,.07)); }
 .mvp-card h3 { color: var(--lime); font-size: 52px; }
 .mvp-card p { font-size: 23px; }

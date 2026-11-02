@@ -1,13 +1,17 @@
 import { createInterface } from "node:readline";
+import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { CommandRouter } from "../src/commands.js";
 import { ReplayFetcher } from "../src/audit/fetcher.js";
+import type { AuditRecording } from "../src/audit/fetcher.js";
+import { createFixItCard } from "../src/audit/fixit.js";
+import { loadLatestNationalCensus } from "../src/audit/census.js";
 import { targets } from "../src/config.js";
 import { GameEngine } from "../src/server/game.js";
 import { OverlayServer } from "../src/server/server.js";
 
-const ROUND_ALIASES = ["wikipedia", "boston", "nyc", "detroit", "michigan", "twitch"];
+const ROUND_ALIASES = ["wikipedia", "boston", "nyc", "detroit", "michigan", "twitch", "samgov", "arcgis-hub"];
 
 function targetByAlias(alias: string) {
   const target = targets.find((candidate) => candidate.alias === alias);
@@ -26,6 +30,12 @@ async function waitForRound(alias: string, game: GameEngine): Promise<void> {
 }
 
 export async function runDemo(smoke = false): Promise<void> {
+  const recordings = new Map<string, AuditRecording>();
+  for (const file of (await readdir(resolve("fixtures/recorded"))).filter((name) => name.endsWith(".json"))) {
+    const recording = JSON.parse(await readFile(resolve("fixtures/recorded", file), "utf8")) as AuditRecording;
+    const previous = recordings.get(recording.alias);
+    if (previous === undefined || previous.recordedAt < recording.recordedAt) recordings.set(recording.alias, recording);
+  }
   let game: GameEngine | undefined;
   const fetcher = new ReplayFetcher({
     timeScale: 0.01,
@@ -40,12 +50,14 @@ export async function runDemo(smoke = false): Promise<void> {
     verdictMs: smoke ? 5 : 2_000,
     mvpMs: smoke ? 5 : 500,
     announce: (message) => console.log(`[chat] ${message}`),
+    fixItForTarget: (target, checks) => createFixItCard(target, recordings.get(target.alias), checks),
+    nationalCensus: await loadLatestNationalCensus(),
   });
   const overlay = new OverlayServer({ store: game.store, assetRoot: resolve("overlay/dist"), port: 3000 });
   const url = await overlay.start();
   console.log(`Offline REPLAY demo ready at ${url}.`);
   if (!smoke) {
-    console.log("Type !y, !n, !whois, !knock <alias>, !audit <alias>, !score, or !board and press Enter.");
+    console.log("Type !y, !n, !whois, !knock <alias>, !audit <alias>, !score, !board, !why, !fix, !national, or !publisher <name> and press Enter.");
     const commands = new CommandRouter({ game, displayHandle: () => "Judge" });
     const input = createInterface({ input: process.stdin, output: process.stdout, prompt: "chat> " });
     input.on("line", (text) => {
@@ -60,10 +72,11 @@ export async function runDemo(smoke = false): Promise<void> {
   try {
     for (const alias of aliases) {
       const target = targetByAlias(alias);
+      if (target.mode === "catalog-census") continue;
       const result = game.queueAudit({ alias, mode: target.mode, requestedBy: "Offline judge demo" });
       if (result.status !== "queued") throw new Error(`Could not queue demo round ${alias}: ${result.status}`);
       await waitForRound(alias, game);
-      if (!smoke) await new Promise((resolveWait) => setTimeout(resolveWait, 350));
+      if (!smoke) await new Promise((resolveWait) => setTimeout(resolveWait, 2_500));
     }
     if (smoke) await overlay.stop();
   } catch (error) {

@@ -46,6 +46,7 @@ export class FetcherError extends Error {
     readonly code: FetchErrorCode,
     message: string,
     options?: ErrorOptions,
+    readonly partialResponse?: FetchResponse,
   ) {
     super(message, options);
     this.name = "FetcherError";
@@ -122,6 +123,7 @@ export interface RecordedExchange {
   bodyEncoding: "base64";
   timestamp: string;
   ms: number;
+  truncated?: boolean;
 }
 
 export interface AuditRecording {
@@ -131,6 +133,7 @@ export interface AuditRecording {
   recordedAt: string;
   sanitized?: ["set-cookie", "cookie"];
   exchanges: RecordedExchange[];
+  censusError?: string;
 }
 
 export interface ResolvedAddress {
@@ -173,6 +176,7 @@ interface SessionOptions {
   now: () => number;
   sleep: (ms: number) => Promise<void>;
   timeScale: number;
+  onExchange?: (exchange: RecordedExchange) => void;
 }
 
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
@@ -195,7 +199,7 @@ function responseHeaders(
   return result;
 }
 
-function recorded(response: FetchResponse): RecordedExchange {
+function recorded(response: FetchResponse, truncated = false): RecordedExchange {
   const headers = Object.fromEntries(
     Object.entries(response.headers).filter(([name]) => !["cookie", "set-cookie"].includes(name.toLowerCase())),
   );
@@ -208,6 +212,7 @@ function recorded(response: FetchResponse): RecordedExchange {
     bodyEncoding: "base64",
     timestamp: response.timestamp,
     ms: response.ms,
+    ...(truncated ? { truncated: true } : {}),
   };
 }
 
@@ -342,17 +347,31 @@ export const nodeTransport: Transport = async (input) => {
         let bytes = 0;
         incoming.on("data", (chunk: Buffer | string) => {
           const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-          bytes += buffer.byteLength;
-          if (bytes > input.maxBytes) {
+          const remaining = input.maxBytes - bytes;
+          if (buffer.byteLength > remaining) {
+            if (remaining > 0) chunks.push(buffer.subarray(0, remaining));
+            bytes = input.maxBytes;
+            const partialResponse: FetchResponse = {
+              url: input.url.toString(),
+              method: input.method,
+              status: incoming.statusCode ?? 0,
+              headers: responseHeaders(incoming.headers),
+              body: Buffer.concat(chunks),
+              timestamp: new Date().toISOString(),
+              ms: Date.now() - started,
+            };
             request.destroy();
             fail(
               new FetcherError(
                 "RESPONSE_TOO_LARGE",
                 `Response exceeded ${input.maxBytes} bytes`,
+                undefined,
+                partialResponse,
               ),
             );
             return;
           }
+          bytes += buffer.byteLength;
           chunks.push(buffer);
         });
         incoming.once("end", () => {
@@ -578,6 +597,9 @@ class GuardedSession implements AuditSession {
       try {
         response = await this.options.backend.next(url, method);
       } catch (error) {
+        if (error instanceof FetcherError && error.partialResponse !== undefined) {
+          this.options.onExchange?.(recorded(error.partialResponse, true));
+        }
         const cause = error instanceof Error ? error.cause : undefined;
         const errorWithCode = typeof error === "object" && error !== null && "code" in error ? error : undefined;
         const codedCause = typeof cause === "object" && cause !== null && "code" in cause ? cause : undefined;
@@ -591,7 +613,9 @@ class GuardedSession implements AuditSession {
           type: "request",
           method,
           path: `${url.pathname}${url.search}`,
-          status: "UNREACHABLE",
+          status: error instanceof FetcherError && error.partialResponse !== undefined
+            ? error.partialResponse.status
+            : "UNREACHABLE",
           ms: Math.max(0, this.options.now() - started),
           errorCode,
         });
@@ -728,6 +752,7 @@ export class LiveFetcher implements Fetcher {
           now: this.now,
           sleep: this.sleep,
           timeScale: 1,
+          ...(this.options.onExchange === undefined ? {} : { onExchange: this.options.onExchange }),
         }),
       );
     });
@@ -864,7 +889,7 @@ export function parseRecording(value: unknown): AuditRecording {
   if (
     input.schemaVersion !== 1 ||
     typeof input.alias !== "string" ||
-    (input.mode !== "knock" && input.mode !== "audit") ||
+    (input.mode !== "knock" && input.mode !== "audit" && input.mode !== "catalog-census") ||
     typeof input.recordedAt !== "string" ||
     !Array.isArray(input.exchanges)
   ) {

@@ -9,6 +9,7 @@ async function main(): Promise<void> {
   if (extra.length > 0) throw new Error("Usage: npm run replay -- [alias]");
   const target = targets.find((candidate) => candidate.alias === alias);
   if (target === undefined) throw new Error(`Unknown target alias ${JSON.stringify(alias)}`);
+  if (target.mode === "catalog-census") throw new Error("Use !national for the catalog census. Replay aliases are knock or audit targets.");
   let game: GameEngine | undefined;
   const fetcher = new ReplayFetcher({ timeScale: 0.02, onEvent: (event) => game?.handleFetcherEvent(event) });
   game = new GameEngine({ runtimeMode: "REPLAY", targets, fetcher, announce: console.log });

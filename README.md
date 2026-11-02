@@ -24,10 +24,20 @@ Open <http://127.0.0.1:3000> in a browser or an OBS Browser Source. In the termi
 | `!y` / `!n` | Place a prediction during the betting window | Verified |
 | `!score` | Show your points and streak | Verified |
 | `!board` | Show the current leaderboard | Verified |
+| `!why` | Replay the most recent check explainer card | Verified |
+| `!fix` | Post a sampled fix-it suggestion, when available | Modeled |
+| `!national` | Summarize the recorded Data.gov national catalog facets | Verified |
+| `!publisher <name>` | Show a publisher count from the recorded organization facet | Verified |
 | `!whois` | Identify the demo bot | Modeled |
 | `!stop` | Stop queued audits, available to a broadcaster or moderator in Twitch mode | Verified |
 
-The demo also plays these recorded rounds: Wikipedia, Boston, NYC, Detroit, Michigan, and Twitch. **Verified:** Michigan and Twitch stop at the terms gate and send zero requests. All replay rounds show the REPLAY badge.
+The demo also plays these recorded rounds: Wikipedia, Boston, NYC, Detroit, Michigan, Twitch, SAM.gov, and ArcGIS Hub. **Verified:** prohibited targets stop at T0 with zero requests. All replay rounds show the REPLAY badge. Each round is placed on the five-step door ladder and shows explainers after check results. Closed doors show configured side-door information. **Modeled:** the between-round France and EU context card has no source link yet.
+
+**Verified:** `catalog-census` records the Data.gov robots file and at most two CKAN facet responses. It waits for the configured 10-second Crawl-delay, honors the 5 MB response cap, and reports missing facets or a truncated second response without estimating.
+
+To create the local national-catalog fixture, a maintainer can run `npm run record -- datagov`. This makes one robots request and up to two package search calls. The recorder sanitizes cookie headers. ArcGIS Hub is terms-gated and sends zero requests; Detroit's portal platform terms question remains unresolved, as described in [docs/TOS-REVIEW.md](docs/TOS-REVIEW.md).
+
+**Verified:** the ArcGIS Hub terms card says, “Publisher says open. Platform says no AI harvesting.” It shows the configured publisher DCAT-US route as a side door, without making a request to ArcGIS Hub.
 
 ## Checks
 
@@ -48,6 +58,8 @@ The scoring formula and outcome definitions are in [docs/RUBRIC.md](docs/RUBRIC.
 
 **Modeled:** Deep Audit samples at most 50 catalog entries and one distribution. Missing fields are reported as “not found in sample.” The generated [docs/RESULTS.md](docs/RESULTS.md) summarizes the local recordings.
 
+**Verified:** `npm run note -- boston` writes a local publisher note at `docs/notes/boston.md` from the fixture. Notes are never sent automatically. For a sampled D2, D3, or D4 issue, the overlay shows the raw sampled field before and a described fix without inventing replacement values.
+
 ## Safety design
 
 - **Verified:** terms are checked first; a prohibited target receives zero requests.
@@ -56,6 +68,8 @@ The scoring formula and outcome definitions are in [docs/RUBRIC.md](docs/RUBRIC.
 - **Verified:** Quick Knock permits at most 2 requests and Deep Audit at most 3, with GET and HEAD only.
 - **Verified:** DNS pinning, private IP rejection, ports 80/443 only, manual redirects with allowlist checks, streamed size limits, and timeouts protect outbound requests.
 - **Verified:** the overlay server binds to 127.0.0.1, checks Origin, uses a strict CSP, and inserts fetched text with `textContent`.
+
+The ladder labels are Closed by terms, Closed by robots, Open with gaps, Open by law, and Agent lane offered. **Modeled:** a ladder placement summarizes only configured terms and this round's checks.
 
 ## Live Twitch setup for maintainers
 

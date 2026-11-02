@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 import { runAuditChecks } from "../src/audit/checks.js";
 import { ReplayFetcher, type AuditRecording } from "../src/audit/fetcher.js";
 import { targets } from "../src/config.js";
+import { classifyDoorLadder } from "../src/audit/ladder.js";
+import { deriveNationalCensus, exchangesForCensus } from "../src/audit/census.js";
 
 async function main(): Promise<void> {
   const fixtureDirectory = resolve("fixtures/recorded");
@@ -20,6 +22,16 @@ async function main(): Promise<void> {
   for (const target of targets) {
     const recording = recordingByAlias.get(target.alias);
     const probeDate = recording?.recordedAt.slice(0, 10) ?? target.tos.reviewedOn;
+    if (target.mode === "catalog-census") {
+      const { callA, callB } = recording ? exchangesForCensus(recording) : {};
+      const census = deriveNationalCensus(callA, callB, recording?.recordedAt.slice(0, 10) ?? "not available", Boolean(callA?.truncated || callB?.truncated), recording?.censusError);
+      const censusFacts = recording === undefined
+        ? "No local census fixture is recorded"
+        : `Total ${census.totalDatasets ?? "not available in this catalog"}; licenses ${census.licenseFacetAvailable ? census.licenses.length : "not available in this catalog"}; publishers ${census.publishersAvailable ? census.publishers.length : "not available in this catalog"}${census.truncated ? `; ${[callA?.truncated ? "Call A" : "", callB?.truncated ? "Call B" : ""].filter(Boolean).join(" and ") || "Census response"} truncated at 5 MB` : ""}`;
+      const statement = `Probed ${recording?.recordedAt.slice(0, 10) ?? "not available"} | Not a ranking`;
+      rows.push(`| ${target.alias} | ${target.mode} | ${target.tos.status} | National lens | ${censusFacts} | ${statement} |`);
+      continue;
+    }
     const fetcher = new ReplayFetcher({
       recording,
       timeScale: 0,
@@ -32,7 +44,8 @@ async function main(): Promise<void> {
       : `Sampled ${audit.sampledEntries}`;
     const statement = `${sample} | Probed ${probeDate} | Rubric v1 | Not a ranking of agency quality`
       .replaceAll("|", "\\|");
-    rows.push(`| ${target.alias} | ${target.mode} | ${target.tos.status} | ${checks || "not found in sample"} | ${statement} |`);
+    const ladder = classifyDoorLadder(target, audit.checks).step;
+    rows.push(`| ${target.alias} | ${target.mode} | ${target.tos.status} | ${ladder} | ${checks || "not found in sample"} | ${statement} |`);
   }
 
   const output = [
@@ -42,11 +55,19 @@ async function main(): Promise<void> {
     "",
     "Check outcomes summarize only the recorded sample. Missing recordings are reported as `not found in sample` through the terms or check results.",
     "",
-    "| Target | Mode | Terms status | Check outcomes | Sample and probe |",
-    "|---|---|---|---|---|",
+    "| Target | Mode | Terms status | Door ladder | Check outcomes | Sample and probe |",
+    "|---|---|---|---|---|---|",
     ...rows,
     "",
-  ].join("\n");
+    "## Needs source",
+    "",
+    "- City of Boston Open Context MCP server URL.",
+    "- Official Twitch API and EventSub URL.",
+    "- Michigan approved route URL; the configured note says a reply is pending.",
+    "- France and EU context source URL for the between-round card.",
+    "- ArcGIS Hub publisher DCAT-US feed URL.",
+    "",
+  ].join("\n").replace(/\n+$/u, "\n");
   await writeFile(resolve("docs/RESULTS.md"), output, "utf8");
   console.log(`Generated docs/RESULTS.md for ${rows.length} configured targets from local fixtures.`);
 }

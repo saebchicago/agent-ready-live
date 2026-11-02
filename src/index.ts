@@ -3,6 +3,7 @@ import { loadRuntimeConfig } from "./config.js";
 import { CommandRouter } from "./commands.js";
 import { LiveFetcher } from "./audit/fetcher.js";
 import { GameEngine } from "./server/game.js";
+import { loadLatestNationalCensus } from "./audit/census.js";
 import { OverlayServer } from "./server/server.js";
 import { TwitchAuth } from "./twitch/auth.js";
 import { ChatSender } from "./twitch/chat.js";
@@ -49,6 +50,7 @@ async function main(): Promise<void> {
     botUserId: config.botUserId,
     channelUserId: config.channelUserId,
   });
+  const nationalCensus = await loadLatestNationalCensus();
   let game: GameEngine | undefined;
   const fetcher = new LiveFetcher({
     repoUrl: config.repoUrl,
@@ -60,6 +62,7 @@ async function main(): Promise<void> {
     runtimeMode: "LIVE",
     targets: config.targets,
     fetcher,
+    ...(nationalCensus === undefined ? {} : { nationalCensus }),
     announce: (message) => void chat.send(message),
   });
   const overlay = new OverlayServer({ store: game.store, assetRoot: resolve("overlay/dist") });

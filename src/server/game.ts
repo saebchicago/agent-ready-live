@@ -4,7 +4,11 @@ import {
 } from "../audit/checks.js";
 import type { Fetcher, FetcherEvent } from "../audit/fetcher.js";
 import { gradeAudit } from "../audit/grade.js";
-import type { Target, TargetMode } from "../config.js";
+import { getExplainer, formatExplainer, type ExplainerCard } from "../audit/explainers.js";
+import { classifyDoorLadder, sideDoorLine, type LadderPlacement } from "../audit/ladder.js";
+import { formatFixItForChat, type FixItCard } from "../audit/fixit.js";
+import { formatCensusForChat, formatPublisherForChat, type NationalCensus } from "../audit/census.js";
+import type { Target, TargetMode, GameTargetMode } from "../config.js";
 import {
   GameStateStore,
   QUEUE_CAP,
@@ -35,7 +39,7 @@ class AuditStoppedError extends Error {}
 
 export interface QueueRequest {
   alias: string;
-  mode: TargetMode;
+  mode: GameTargetMode;
   requestedBy: string;
 }
 
@@ -58,6 +62,8 @@ export interface GameEngineOptions {
   doorClosedMs?: number;
   verdictMs?: number;
   mvpMs?: number;
+  fixItForTarget?: (target: Target, checks: readonly CheckResult[]) => FixItCard | undefined;
+  nationalCensus?: NationalCensus;
 }
 
 export class GameEngine {
@@ -71,12 +77,15 @@ export class GameEngine {
   private readonly mvpMs: number;
   private draining = false;
   private nextAuditId = 1;
+  private lastExplainer: ExplainerCard | undefined;
+  private lastFixIt: FixItCard | undefined;
 
   constructor(private readonly options: GameEngineOptions) {
     if (options.fetcher.runtimeMode !== options.runtimeMode) {
       throw new Error(`Fetcher mode ${options.fetcher.runtimeMode} cannot run in ${options.runtimeMode} mode`);
     }
     this.store = options.store ?? new GameStateStore(options.runtimeMode);
+    this.store.dispatch({ type: "NATIONAL_LENS", now: (options.now ?? Date.now)(), census: options.nationalCensus });
     this.now = options.now ?? Date.now;
     this.sleep = options.sleep ?? ((ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms)));
     this.announce = options.announce ?? (() => undefined);
@@ -91,7 +100,7 @@ export class GameEngine {
     if (state.stopped) return { status: "stopped" };
     const target = this.options.targets.find(({ alias }) => alias === request.alias);
     if (target === undefined) return { status: "unknown" };
-    if (target.mode !== request.mode) return { status: "wrong_mode", actualMode: target.mode };
+    if (target.mode === "catalog-census" || target.mode !== request.mode) return { status: "wrong_mode", actualMode: target.mode };
     if (state.queue.length >= QUEUE_CAP) return { status: "full" };
 
     this.store.dispatch({
@@ -104,6 +113,7 @@ export class GameEngine {
         targetMode: target.mode,
         requestedBy: request.requestedBy,
         enqueuedAt: new Date(this.now()).toISOString(),
+        ...(target.sideDoor === undefined ? {} : { sideDoor: target.sideDoor }),
       },
     });
     const position = this.store.getState().queue.length;
@@ -150,6 +160,25 @@ export class GameEngine {
       : rows.map((row) => `${row.targetAlias}: ${row.checks.map(({ id, outcome }) => `${id} ${humanOutcome(outcome)}`).join(", ")}`).join(" | ");
   }
 
+  why(): string | undefined {
+    if (this.lastExplainer === undefined) return undefined;
+    return formatExplainer(this.lastExplainer).replace(/robots\.txt/giu, "robots file");
+  }
+
+  fix(): string | undefined {
+    if (this.lastFixIt === undefined) return undefined;
+    const text = formatFixItForChat(this.lastFixIt);
+    return Array.from(text).slice(0, 450).join("");
+  }
+
+  national(): string {
+    return formatCensusForChat(this.store.getState().nationalCensus);
+  }
+
+  publisher(name: string): string {
+    return formatPublisherForChat(this.store.getState().nationalCensus, name);
+  }
+
   stop(): void {
     this.store.dispatch({ type: "STOP", now: this.now() });
     void this.say("Kill switch engaged. Queue cleared and audit stopped.");
@@ -180,6 +209,11 @@ export class GameEngine {
           this.store.dispatch({ type: "FINISH_AUDIT", now: this.now() });
           continue;
         }
+        if (target.mode === "catalog-census") {
+          this.store.dispatch({ type: "AUDIT_ERROR", now: this.now(), message: "Use !national for the catalog census." });
+          this.store.dispatch({ type: "FINISH_AUDIT", now: this.now() });
+          continue;
+        }
         await this.runTarget(target);
       }
     } finally {
@@ -191,6 +225,7 @@ export class GameEngine {
   }
 
   private async runTarget(target: Target): Promise<void> {
+    if (target.mode === "catalog-census") return;
     try {
       await this.say(`Starting ${target.alias}. The robot approaches the door.`);
       const audit = await runAuditChecks(
@@ -211,6 +246,8 @@ export class GameEngine {
           },
           onCheck: async (check) => {
             this.assertRunning();
+            const explainer = getExplainer(check.id, check.outcome);
+            this.lastExplainer = explainer;
             const bet = this.store.getState().bet;
             if (bet?.checkId === check.id) {
               this.store.dispatch({
@@ -219,7 +256,7 @@ export class GameEngine {
                 correctChoice: correctChoice(check),
               });
             }
-            this.store.dispatch({ type: "CHECK_REVEAL", now: this.now(), check });
+            this.store.dispatch({ type: "CHECK_REVEAL", now: this.now(), check, explainer });
             await this.say(`${check.id}: ${humanOutcome(check.outcome)}.`);
           },
         },
@@ -228,13 +265,21 @@ export class GameEngine {
 
       const terms = audit.checks.find(({ id }) => id === "T0");
       if (terms?.outcome === "DOOR_CLOSED_BY_TERMS") {
+        const placement = classifyDoorLadder(target, audit.checks);
+        this.store.dispatch({ type: "LADDER_RESULT", now: this.now(), placement });
         this.store.dispatch({
           type: "DOOR_CLOSED",
           now: this.now(),
           evidence: target.tos.evidence,
           sourceUrl: target.tos.sourceUrl,
+          sourceDomain: new URL(target.tos.sourceUrl).hostname,
+          readDate: target.tos.reviewedOn,
+          ...(target.sideDoor === undefined ? {} : { sideDoor: target.sideDoor }),
         });
         await this.say(`${target.alias}: door closed by terms. Zero requests sent.`);
+        if (target.alias === "arcgis-hub") await this.say("Publisher says open. Platform says no AI harvesting.");
+        if (target.sideDoor !== undefined) await this.say(sideDoorLine(target.sideDoor.label));
+        await this.say(`${target.alias} lands on the ladder: ${placement.step}.`);
         await this.sleep(this.doorClosedMs);
         this.assertRunning();
         this.store.dispatch({ type: "FINISH_AUDIT", now: this.now() });
@@ -243,17 +288,28 @@ export class GameEngine {
 
       const grade = gradeAudit(target.mode, audit.checks, audit.sampledEntries, audit.probedOn);
       const reasons = reasonCodes(audit.checks);
+      const placement = classifyDoorLadder(target, audit.checks);
+      this.store.dispatch({ type: "LADDER_RESULT", now: this.now(), placement });
       const verdictText = makeVerdictText(target.mode, audit.checks, grade.verdict);
+      const fixIt = this.options.fixItForTarget?.(target, audit.checks);
+      if (fixIt !== undefined) this.lastFixIt = fixIt;
       this.store.dispatch({
         type: "VERDICT",
         now: this.now(),
         text: verdictText,
         reasons,
         checks: audit.checks.map(({ id, outcome }) => ({ id, outcome })),
+        ladderPlacement: placement,
+        ...(fixIt === undefined ? {} : { fixIt }),
         sampledEntries: audit.sampledEntries,
         probedOn: audit.probedOn,
       });
       await this.say(`${target.alias}: ${verdictText}`);
+      const k2 = audit.checks.find(({ id }) => id === "K2");
+      if (k2?.outcome === "disallowed" && target.sideDoor !== undefined) {
+        await this.say(sideDoorLine(target.sideDoor.label));
+      }
+      await this.say(`${target.alias} lands on the ladder: ${placement.step}.`);
       await this.sleep(this.verdictMs);
       this.assertRunning();
       const beforeMvp = this.store.getState().revision;
@@ -292,7 +348,7 @@ function correctChoice(check: CheckResult): BetChoice {
   return NEGATIVE_OUTCOMES.has(check.outcome) ? "n" : "y";
 }
 
-export function makeVerdictText(mode: TargetMode, checks: readonly CheckResult[], disclosure: string): string {
+export function makeVerdictText(mode: GameTargetMode, checks: readonly CheckResult[], disclosure: string): string {
   const k2 = checks.find(({ id }) => id === "K2");
   if (mode === "audit" && k2?.outcome === "disallowed") {
     const rule = k2.evidence.match(/Blocked by robots\.txt: (.+?) \(path /u)?.[1];

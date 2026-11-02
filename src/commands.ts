@@ -1,4 +1,4 @@
-import type { TargetMode } from "./config.js";
+import type { GameTargetMode } from "./config.js";
 import type { BetChoice } from "./server/state.js";
 
 const USER_COOLDOWN_MS = 500;
@@ -20,17 +20,21 @@ export interface CommandMessage {
 export interface CommandGame {
   queueAudit(request: {
     alias: string;
-    mode: TargetMode;
+    mode: GameTargetMode;
     requestedBy: string;
   }):
     | { status: "queued"; position: number; targetName: string }
     | { status: "full" }
     | { status: "stopped" }
     | { status: "unknown" }
-    | { status: "wrong_mode"; actualMode: TargetMode };
+    | { status: "wrong_mode"; actualMode: GameTargetMode | "catalog-census" };
   placeBet(userId: string, displayHandle: string, choice: BetChoice): "accepted" | "closed";
   score(userId: string): { points: number; streak: number };
   board(): string;
+  why?(): string | undefined;
+  fix?(): string | undefined;
+  national?(): string;
+  publisher?(name: string): string;
   stop(): void;
 }
 
@@ -88,6 +92,7 @@ export class CommandRouter {
       if (queued.status === "full") return "Queue is full. Try again after a round.";
       if (queued.status === "stopped") return "Audits are stopped by the kill switch.";
       if (queued.status === "wrong_mode") {
+        if (queued.actualMode === "catalog-census") return `${alias} is a catalog census target. Use !national.`;
         return `${alias} is for !${queued.actualMode === "knock" ? "knock" : "audit"}.`;
       }
       return `Unknown ${mode === "knock" ? "knock" : "audit"} alias.`;
@@ -110,6 +115,14 @@ export class CommandRouter {
     }
 
     if (command.name === "board") return `Board: ${game.board()}`;
+    if (command.name === "why") return game.why?.() ?? "No check card yet.";
+    if (command.name === "fix") return game.fix?.() ?? "No sampled fix-it card.";
+    if (command.name === "national") return game.national?.() ?? "National lens not available in this catalog.";
+    if (command.name === "publisher") {
+      const name = command.args.join(" ").trim();
+      if (!name) return "Usage: !publisher <name>";
+      return game.publisher?.(name) ?? "Publisher data not available in this catalog.";
+    }
 
     if (command.name === "stop") {
       if (message.isBroadcaster !== true && message.isModerator !== true) {
@@ -124,7 +137,7 @@ export class CommandRouter {
 
   private isSupported(name: string): boolean {
     if (name === "ping" || name === "whois") return true;
-    return this.game !== undefined && ["knock", "audit", "y", "n", "score", "board", "stop"].includes(name);
+    return this.game !== undefined && ["knock", "audit", "y", "n", "score", "board", "why", "fix", "national", "publisher", "stop"].includes(name);
   }
 
   private takeCooldown(userId: string, name: string): boolean {

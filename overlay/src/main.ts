@@ -1,4 +1,5 @@
 import type { GameState, LeaderboardRow } from "../../src/server/state.js";
+import { DOOR_LADDER } from "../../src/audit/ladder.js";
 import { stageScale } from "./layout.js";
 
 function element<T extends HTMLElement>(id: string): T {
@@ -127,8 +128,33 @@ function render(next: GameState): void {
   visible("idle-panel", next.currentAudit === undefined);
   visible("active-panel", next.currentAudit !== undefined);
   visible("boards", next.phase === "idle");
+  visible("global-context", next.phase === "idle" && next.globalContextVisible);
+  const census = next.nationalCensus;
+  text("national-total", census?.totalDatasets === undefined ? "Total datasets: not available in this catalog" : `Total datasets: ${census.totalDatasets}`);
+  text("national-licenses", census?.licenseFacetAvailable
+    ? `License counts and share: ${census.licenses.map(({ name, count, share }) => `${name} ${count} (${share === undefined ? "share not available in this catalog" : `${(share * 100).toFixed(2)}%`})`).join("; ") || "none reported"}`
+    : "Licenses: not available in this catalog");
+  text("national-no-license", census?.noLicenseCount === undefined
+    ? "No-license count and share: not available in this catalog"
+    : `No license: ${census.noLicenseCount} (${census.noLicenseShare === undefined ? "share not available in this catalog" : `${(census.noLicenseShare * 100).toFixed(2)}%`})`);
+  text("national-formats", census?.formatsAvailable
+    ? `Top formats: ${census.formats.slice(0, 5).map(({ name, count }) => `${name} ${count}`).join("; ") || "none reported"}`
+    : "Formats: not available in this catalog");
+  text("national-publishers", census?.publishersAvailable
+    ? `Top publishers: ${census.publishers.slice(0, 5).map(({ name, count }) => `${name} ${count}`).join("; ") || "none reported"}`
+    : "Publishers: not available in this catalog");
+  text("national-matched-publishers", census
+    ? `Named publisher counts: ${Object.entries(census.namedPublisherCounts).map(([name, count]) => `${name} ${count === undefined ? "not available in this catalog" : count}`).join("; ")}`
+    : "Named publisher counts: not available in this catalog");
+  text("national-notes", census?.notes.join(" ") ?? "No local census fixture is recorded.");
+  text("national-probed", `Probed ${census?.probedOn ?? "not available"} | Not a ranking`);
   renderRows("knock-board", next.leaderboards.knock);
   renderRows("audit-board", next.leaderboards.audit);
+
+  const card = next.explainer;
+  const showCard = card !== undefined && Date.parse(card.expiresAt) > Date.now();
+  visible("explainer-card", showCard);
+  if (showCard && card) { text("explainer-title", `${card.checkId} ${card.outcome}`); text("explainer-what", `What an agent gets wrong: ${card.what}`); text("explainer-fix", `The fix: ${card.fix}`); text("explainer-standard", `Standard: ${card.standard}`); }
 
   const current = next.currentAudit;
   if (current === undefined) return;
@@ -151,14 +177,38 @@ function render(next: GameState): void {
   visible("door-panel", next.phase === "door_closed" && next.doorClosed !== undefined);
   if (next.doorClosed !== undefined) {
     text("terms-evidence", next.doorClosed.evidence);
+    text("terms-origin", `Source domain: ${next.doorClosed.sourceDomain} | Read ${next.doorClosed.readDate}`);
+    const placement = next.currentAudit?.ladderPlacement;
+    text("terms-ladder-placement", placement ? `Ladder: ${placement.step}. ${placement.evidence}` : "");
+    const rungs = DOOR_LADDER.map((step) => { const rung = document.createElement("span"); rung.textContent = step; rung.dataset.active = String(step === placement?.step); return rung; });
+    element("terms-door-ladder").replaceChildren(...rungs);
     const source = element<HTMLAnchorElement>("terms-source");
     source.textContent = next.doorClosed.sourceUrl;
     source.href = next.doorClosed.sourceUrl;
+    text("terms-side-door", next.doorClosed.sideDoor ? `Front door closed. Side door: ${next.doorClosed.sideDoor.label}.` : "");
+    visible("platform-terms-message", next.currentAudit?.targetAlias === "arcgis-hub");
+    const sideLink = element<HTMLAnchorElement>("side-door-link");
+    visible("side-door-link", Boolean(next.doorClosed.sideDoor?.url));
+    if (next.doorClosed.sideDoor?.url) { sideLink.textContent = next.doorClosed.sideDoor.url; sideLink.href = next.doorClosed.sideDoor.url; }
   }
 
   visible("verdict-panel", next.phase === "verdict");
   if (next.verdict !== undefined) {
     text("verdict-line", next.verdict.text);
+    text("ladder-placement", `Ladder: ${next.verdict.ladderPlacement.step}. ${next.verdict.ladderPlacement.evidence}`);
+    const rungs = DOOR_LADDER.map((step) => { const rung = document.createElement("span"); rung.textContent = step; rung.dataset.active = String(step === next.verdict?.ladderPlacement.step); return rung; });
+    element("door-ladder").replaceChildren(...rungs);
+    const target = next.currentAudit;
+    const side = target?.sideDoor;
+    text("verdict-side-door", next.verdict.ladderPlacement.step === "Closed by robots" && side ? `Front door closed. Side door: ${side.label}.` : "");
+    const fix = element("fixit-card");
+    fix.replaceChildren();
+    visible("fixit-card", next.verdict.fixIt !== undefined);
+    if (next.verdict.fixIt) {
+      const title = document.createElement("strong"); title.textContent = `Fix-it sample: ${next.verdict.fixIt.recordTitle} (${next.verdict.fixIt.fixtureDate})`;
+      fix.append(title);
+      for (const field of next.verdict.fixIt.fields) { const line = document.createElement("p"); line.textContent = `${field.field} Before: ${field.before}. After: ${field.after}.`; fix.append(line); }
+    }
     text("correct-bettors", `${next.verdict.correctBettors} correct bettors`);
     const badges = next.verdict.checks.map(({ id, outcome }) => {
       const item = document.createElement("span");

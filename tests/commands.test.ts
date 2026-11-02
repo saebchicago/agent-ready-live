@@ -55,12 +55,16 @@ describe("game command routing", () => {
       placeBet: () => "accepted" as const,
       score: () => ({ points: 20, streak: 2 }),
       board: () => "wikipedia K2 allowed",
+      why: () => "K2 explainer",
+      fix: () => "D3 fix-it",
+      national: () => "National lens: 100 datasets. Probed 2026-11-02 | Not a ranking.",
+      publisher: (name: string) => `${name}: 8. Probed 2026-11-02 | Not a ranking.`,
       stop() { this.stopped += 1; },
     };
     return game;
   }
 
-  it("routes knocks, audits, bets, score, and board", () => {
+  it("routes knocks, audits, bets, score, board, why, fix, national, and publisher", () => {
     let now = 0;
     const game = fakeGame();
     const router = new CommandRouter({
@@ -81,6 +85,14 @@ describe("game command routing", () => {
     expect(router.handle({ userId: "u1", userLogin: "consented", text: "!score" })).toContain("20 points");
     now += 1_000;
     expect(router.handle({ userId: "u1", userLogin: "consented", text: "!board" })).toContain("wikipedia K2 allowed");
+    now += 1_000;
+    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!why" })).toBe("K2 explainer");
+    now += 1_000;
+    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!fix" })).toBe("D3 fix-it");
+    now += 1_000;
+    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!national" })).toContain("100 datasets");
+    now += 1_000;
+    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!publisher Michigan" })).toContain("Michigan: 8");
   });
 
   it("allows only a moderator or broadcaster to engage the kill switch", () => {

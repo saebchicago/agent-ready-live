@@ -3,7 +3,8 @@ import { homedir } from "node:os";
 import { isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type TargetMode = "knock" | "audit";
+export type TargetMode = "knock" | "audit" | "catalog-census";
+export type GameTargetMode = Exclude<TargetMode, "catalog-census">;
 export type TargetDialect = "dcat" | "socrata" | "ckan";
 export type TosStatus =
   | "allowed-with-conditions"
@@ -18,6 +19,13 @@ export interface TargetTerms {
   reviewedOn: string;
 }
 
+export interface TargetSideDoor {
+  label: string;
+  url?: string;
+  evidence: string;
+  readDate: string;
+}
+
 export interface Target {
   alias: string;
   name: string;
@@ -26,6 +34,7 @@ export interface Target {
   catalogUrl?: string;
   dialect?: TargetDialect;
   tos: TargetTerms;
+  sideDoor?: TargetSideDoor;
   tosReviewed: boolean;
   notes: string;
 }
@@ -47,7 +56,7 @@ export interface RuntimeConfig extends OAuthConfig {
 
 const TARGETS_PATH = new URL("../config/targets.json", import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL("..", import.meta.url));
-const TARGET_MODES = new Set<TargetMode>(["knock", "audit"]);
+const TARGET_MODES = new Set<TargetMode>(["knock", "audit", "catalog-census"]);
 const TARGET_DIALECTS = new Set<TargetDialect>(["dcat", "socrata", "ckan"]);
 const TOS_STATUSES = new Set<TosStatus>([
   "allowed-with-conditions",
@@ -141,6 +150,13 @@ function parseTarget(value: unknown, index: number): Target {
   }
 
   const catalogUrl = optionalString(input.catalogUrl, `${label}.catalogUrl`);
+  const sideDoorInput = input.sideDoor === undefined ? undefined : record(input.sideDoor, `${label}.sideDoor`);
+  const sideDoorReadDate = sideDoorInput === undefined
+    ? undefined
+    : requiredString(sideDoorInput.readDate, `${label}.sideDoor.readDate`);
+  if (sideDoorReadDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(sideDoorReadDate)) {
+    throw new Error(`${label}.sideDoor.readDate must use YYYY-MM-DD`);
+  }
   const dialect =
     input.dialect === undefined
       ? undefined
@@ -155,6 +171,14 @@ function parseTarget(value: unknown, index: number): Target {
       ? {}
       : { catalogUrl: httpsUrl(catalogUrl, `${label}.catalogUrl`) }),
     ...(dialect === undefined ? {} : { dialect }),
+    ...(sideDoorInput === undefined ? {} : {
+      sideDoor: {
+        label: requiredString(sideDoorInput.label, `${label}.sideDoor.label`),
+        ...(sideDoorInput.url === undefined ? {} : { url: httpsUrl(sideDoorInput.url, `${label}.sideDoor.url`) }),
+        evidence: requiredString(sideDoorInput.evidence, `${label}.sideDoor.evidence`),
+        readDate: sideDoorReadDate as string,
+      },
+    }),
     tos: {
       status: enumValue(tosInput.status, TOS_STATUSES, `${label}.tos.status`),
       sourceUrl: httpsUrl(tosInput.sourceUrl, `${label}.tos.sourceUrl`),

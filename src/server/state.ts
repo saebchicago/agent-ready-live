@@ -1,6 +1,10 @@
 import type { CheckResult } from "../audit/checks.js";
+import type { NationalCensus } from "../audit/census.js";
+import type { ExplainerCard } from "../audit/explainers.js";
+import type { LadderPlacement } from "../audit/ladder.js";
+import type { FixItCard } from "../audit/fixit.js";
 import type { FetcherEvent, HttpMethod } from "../audit/fetcher.js";
-import type { TargetMode } from "../config.js";
+import type { GameTargetMode, TargetSideDoor } from "../config.js";
 
 export const QUEUE_CAP = 5;
 export const LEADERBOARD_TTL_MS = 7 * 24 * 60 * 60 * 1_000;
@@ -21,9 +25,10 @@ export interface AuditQueueEntry {
   id: string;
   targetAlias: string;
   targetName: string;
-  targetMode: TargetMode;
+  targetMode: GameTargetMode;
   requestedBy: string;
   enqueuedAt: string;
+  sideDoor?: TargetSideDoor;
 }
 
 export interface AuditInProgress extends AuditQueueEntry {
@@ -31,6 +36,11 @@ export interface AuditInProgress extends AuditQueueEntry {
   currentCheckId?: CheckResult["id"];
   checks: CheckResult[];
   correctBettors: string[];
+  ladderPlacement?: LadderPlacement;
+}
+
+export interface VisibleExplainer extends ExplainerCard {
+  expiresAt: string;
 }
 
 export interface BetVote {
@@ -71,6 +81,9 @@ export interface WaitingState {
 export interface DoorClosedState {
   evidence: string;
   sourceUrl: string;
+  sourceDomain: string;
+  readDate: string;
+  sideDoor?: TargetSideDoor;
 }
 
 export interface VerdictState {
@@ -78,6 +91,8 @@ export interface VerdictState {
   reasons: string[];
   checks: Array<Pick<CheckResult, "id" | "outcome">>;
   correctBettors: number;
+  ladderPlacement: LadderPlacement;
+  fixIt?: FixItCard;
 }
 
 export interface MvpState {
@@ -89,7 +104,7 @@ export interface MvpState {
 export interface LeaderboardRow {
   targetAlias: string;
   targetName: string;
-  targetMode: TargetMode;
+  targetMode: GameTargetMode;
   checks: Array<Pick<CheckResult, "id" | "outcome">>;
   sampledEntries: number;
   probedOn: string;
@@ -116,6 +131,9 @@ export interface GameState {
   verdict: VerdictState | undefined;
   mvp: MvpState | undefined;
   error: string | undefined;
+  explainer: VisibleExplainer | undefined;
+  globalContextVisible: boolean;
+  nationalCensus: NationalCensus | undefined;
 }
 
 interface TimedAction {
@@ -126,7 +144,7 @@ export type GameAction =
   | (TimedAction & { type: "ENQUEUE"; entry: AuditQueueEntry })
   | (TimedAction & { type: "START_NEXT" })
   | (TimedAction & { type: "CHECK_BEGIN"; checkId: CheckResult["id"] })
-  | (TimedAction & { type: "CHECK_REVEAL"; check: CheckResult })
+  | (TimedAction & { type: "CHECK_REVEAL"; check: CheckResult; explainer: ExplainerCard })
   | (TimedAction & {
       type: "BET_OPEN";
       checkId: CheckResult["id"];
@@ -141,17 +159,21 @@ export type GameAction =
     })
   | (TimedAction & { type: "BET_CLOSE"; correctChoice: BetChoice })
   | (TimedAction & { type: "FETCHER_EVENT"; event: FetcherEvent })
-  | (TimedAction & { type: "DOOR_CLOSED"; evidence: string; sourceUrl: string })
+  | (TimedAction & { type: "DOOR_CLOSED"; evidence: string; sourceUrl: string; sourceDomain: string; readDate: string; sideDoor?: TargetSideDoor })
+  | (TimedAction & { type: "LADDER_RESULT"; placement: LadderPlacement })
   | (TimedAction & {
       type: "VERDICT";
       text: string;
       reasons: string[];
       checks: Array<Pick<CheckResult, "id" | "outcome">>;
+      ladderPlacement: LadderPlacement;
+      fixIt?: FixItCard;
       sampledEntries: number;
       probedOn: string;
     })
   | (TimedAction & { type: "SHOW_MVP" })
   | (TimedAction & { type: "AUDIT_ERROR"; message: string })
+  | (TimedAction & { type: "NATIONAL_LENS"; census: NationalCensus | undefined })
   | (TimedAction & { type: "FINISH_AUDIT" })
   | (TimedAction & { type: "PRUNE" })
   | (TimedAction & { type: "STOP" });
@@ -173,6 +195,9 @@ export function createInitialState(runtimeMode: RuntimeMode): GameState {
     verdict: undefined,
     mvp: undefined,
     error: undefined,
+    explainer: undefined,
+    globalContextVisible: true,
+    nationalCensus: undefined,
   };
 }
 
@@ -230,6 +255,7 @@ export function gameReducer(input: GameState, action: GameAction): GameState {
         queue,
         scores,
         phase: "auditing",
+        globalContextVisible: false,
         requestTicker: [],
         currentAudit: {
           ...entry,
@@ -256,6 +282,7 @@ export function gameReducer(input: GameState, action: GameAction): GameState {
           currentCheckId: action.check.id,
           checks: [...state.currentAudit.checks, action.check],
         },
+        explainer: { ...action.explainer, expiresAt: new Date(action.now + 8_000).toISOString() },
       });
     case "BET_OPEN":
       if (state.currentAudit === undefined || state.stopped) return state;
@@ -354,7 +381,18 @@ export function gameReducer(input: GameState, action: GameAction): GameState {
         phase: "door_closed",
         bet: undefined,
         waiting: undefined,
-        doorClosed: { evidence: action.evidence, sourceUrl: action.sourceUrl },
+        doorClosed: {
+          evidence: action.evidence,
+          sourceUrl: action.sourceUrl,
+          sourceDomain: action.sourceDomain,
+          readDate: action.readDate,
+          ...(action.sideDoor === undefined ? {} : { sideDoor: action.sideDoor }),
+        },
+      });
+    case "LADDER_RESULT":
+      if (state.currentAudit === undefined) return state;
+      return withRevision(state, {
+        currentAudit: { ...state.currentAudit, ladderPlacement: action.placement },
       });
     case "VERDICT": {
       if (state.currentAudit === undefined) return state;
@@ -383,6 +421,8 @@ export function gameReducer(input: GameState, action: GameAction): GameState {
           reasons: action.reasons.slice(0, 3),
           checks: action.checks,
           correctBettors: state.currentAudit.correctBettors.length,
+          ladderPlacement: action.ladderPlacement,
+          ...(action.fixIt === undefined ? {} : { fixIt: action.fixIt }),
         },
         leaderboards: {
           ...state.leaderboards,
@@ -411,12 +451,15 @@ export function gameReducer(input: GameState, action: GameAction): GameState {
         waiting: undefined,
         error: action.message,
       });
+    case "NATIONAL_LENS":
+      return withRevision(state, { nationalCensus: action.census });
     case "FINISH_AUDIT":
       return withRevision(state, {
         ...clearTransient(),
         phase: "idle",
         currentAudit: undefined,
         requestTicker: [],
+        globalContextVisible: true,
       });
     case "STOP":
       return withRevision(state, {
@@ -426,6 +469,7 @@ export function gameReducer(input: GameState, action: GameAction): GameState {
         queue: [],
         currentAudit: undefined,
         requestTicker: [],
+        globalContextVisible: true,
       });
   }
 }

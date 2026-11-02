@@ -1,0 +1,24 @@
+{
+  "case": "synthetic CKAN facets, not a recorded response",
+  "callA": {
+    "result": {
+      "count": 100,
+      "facets": {
+        "license_id": { "cc0-1.0": 30, "odc-pddl": 10 },
+        "organization": { "Michigan Data": 8, "City of Detroit": 7, "Boston": 6 },
+        "res_format": { "CSV": 40, "JSON": 30, "GeoJSON": 10 }
+      }
+    }
+  },
+  "callB": {
+    "result": {
+      "count": 100,
+      "facets": {
+        "organization": { "Michigan Data": 8, "City of Detroit": 7, "Boston": 6, "New York City Open Data": 5 }
+      }
+    }
+  },
+  "missingFacet": {
+    "result": { "count": 100, "facets": { "license_id": { "cc0-1.0": 20 } } }
+  }
+}
