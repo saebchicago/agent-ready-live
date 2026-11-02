@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "alias": "datagov",
+  "mode": "catalog-census",
+  "recordedAt": "2026-11-02T05:25:56.135Z",
+  "sanitized": [
+    "set-cookie",
+    "cookie"
+  ],
+  "exchanges": [
+    {
+      "url": "https://catalog.data.gov/robots.txt",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "content-length": "157",
+        "connection": "keep-alive",
+        "x-frame-options": "DENY",
+        "accept-ranges": "bytes",
+        "last-modified": "Wed, 28 Oct 2026 19:27:45 GMT",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "x-content-type-options": "nosniff",
+        "x-vcap-request-id": "b4720ec0-75b5-484a-5f53-4fa7934ee223",
+        "date": "Mon, 02 Nov 2026 05:22:25 GMT",
+        "etag": "\"6ae24cb1-9d\"",
+        "vary": "Accept-Encoding",
+        "x-cache": "Hit from cloudfront",
+        "via": "1.1 ffbd777569c58648ad8a370f0c8e718a.cloudfront.net (CloudFront)",
+        "x-amz-cf-pop": "ORD58-P16",
+        "x-amz-cf-id": "sAHAKC-3viUzBt4kfdIMiya4CD461m-B-eCUtyDBvw6NtyVskG9LpA==",
+        "age": "211"
+      },
+      "body": "VXNlci1hZ2VudDogKgojIFRPRE86IGFkZCBkaXNhbGxvdyByb3V0ZXMKQ3Jhd2wtRGVsYXk6IDEwCgojIHNpdGVtYXAgdXJsIHNob3VsZCBnZXQgcmVwbGFjZWQgYnkgcHJveHkgLnByb2ZpbGUKU2l0ZW1hcDogaHR0cHM6Ly9jYXRhbG9nLmRhdGEuZ292L3NpdGVtYXAueG1sCg==",
+      "bodyEncoding": "base64",
+      "timestamp": "2026-11-02T05:25:56.292Z",
+      "ms": 85
+    },
+    {
+      "url": "https://catalog.data.gov/api/3/action/package_search?rows=1&facet.field=%5B%22license_id%22%2C%22organization%22%2C%22res_format%22%5D&facet.limit=25",
+      "method": "GET",
+      "status": 404,
+      "headers": {
+        "content-type": "application/json",
+        "content-length": "36",
+        "connection": "keep-alive",
+        "date": "Mon, 02 Nov 2026 05:26:06 GMT",
+        "x-frame-options": "SAMEORIGIN",
+        "content-security-policy": "default-src 'self'; script-src 'self' https://*.googletagmanager.com https://buttons.github.io https://unpkg.com 'unsafe-hashes' 'sha256-osjxnKEPL/pQJbFk1dKsF7PYFmTyMWGmVSiL9inhxJY=' 'sha256-A1KDZ6CTgI16YJ4cUNyyCFExM5+Sv4ApvahuZIQRXPA=' https://static.zdassets.com https://ekr.zdassets.com 'sha256-Ff1SFMp5PHyy62W49sHzg1RI9yL6Y9xoqXeGrJP8TUI=' https://gsa-solutionshelp.zendesk.com 'nonce-c_Y9ZJVvlrQ-yiITnL3sWuMCMd_rrFOM'; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' https://s3-us-gov-west-1.amazonaws.com https://raw.githubusercontent.com data: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://api.github.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://static.zdassets.com https://ekr.zdassets.com https://gsa-solutionshelp.zendesk.com https://gov-bam.nr-data.net https://*.ingest.de.sentry.io; frame-src https://www.googletagmanager.com; style-src-attr 'self' 'unsafe-hashes' 'sha256-kELgoK46JmGjLd8UHfzN0qJToDgIB+yMtRHG8PtGL7s='; style-src 'self' https://cdnjs.cloudflare.com; style-src-elem 'self' https://cdnjs.cloudflare.com https://unpkg.com 'unsafe-inline'",
+        "permissions-policy": "browsing-topics=()",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "x-content-type-options": "nosniff",
+        "x-vcap-request-id": "0187fa3a-3259-4d6d-7001-5a56e0d7bcaf",
+        "vary": "Accept-Encoding",
+        "x-cache": "Error from cloudfront",
+        "via": "1.1 04cfc0fd58c6f7eab88ddd556032bc4e.cloudfront.net (CloudFront)",
+        "x-amz-cf-pop": "ORD58-P16",
+        "x-amz-cf-id": "3AeH7HcZFYTpFwvBjMbkPxkf9FlZAKWLQp9irXMYvEX1aUY0R7MMdg=="
+      },
+      "body": "eyJkZXRhaWwiOnt9LCJtZXNzYWdlIjoiTm90IEZvdW5kIn0K",
+      "bodyEncoding": "base64",
+      "timestamp": "2026-11-02T05:26:06.438Z",
+      "ms": 139
+    }
+  ]
+}
