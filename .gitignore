@@ -2,3 +2,4 @@
 node_modules/
 recordings/
 *.log
+/agent-ready-live/
