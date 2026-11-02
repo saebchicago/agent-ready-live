@@ -14,8 +14,9 @@ Check outcomes summarize only the recorded sample. Missing recordings are report
 | michigan | knock | prohibited | Closed by terms | T0=DOOR_CLOSED_BY_TERMS | Knock only: no catalog sampled \| Probed 2026-10-31 \| Rubric v1 \| Not a ranking of agency quality |
 | twitch | knock | prohibited | Closed by terms | T0=DOOR_CLOSED_BY_TERMS | Knock only: no catalog sampled \| Probed 2026-10-31 \| Rubric v1 \| Not a ranking of agency quality |
 | samgov | knock | prohibited | Closed by terms | T0=DOOR_CLOSED_BY_TERMS | Knock only: no catalog sampled \| Probed 2026-11-01 \| Rubric v1 \| Not a ranking of agency quality |
-| datagov | catalog-census | allowed-with-conditions | National lens | Total not available in this catalog; licenses not available in this catalog; publishers not available in this catalog | Probed 2026-11-02 | Not a ranking |
+| datagov | catalog-census | allowed-with-conditions | National lens | Legacy CKAN endpoint returned 404 on 2026-11-02. The national catalog API moved to v4. Agents using stale docs fail here. | Probed 2026-11-02 | Not a ranking |
 | arcgis-hub | knock | prohibited | Closed by terms | T0=DOOR_CLOSED_BY_TERMS | Knock only: no catalog sampled \| Probed 2026-11-02 \| Rubric v1 \| Not a ranking of agency quality |
+| datagov-v4 | catalog-census-v4 | allowed-with-conditions | National lens | No local v4 census fixture is recorded | Probed not available \| Not a ranking |
 
 ## Needs source
 

@@ -27,7 +27,7 @@ export interface CommandGame {
     | { status: "full" }
     | { status: "stopped" }
     | { status: "unknown" }
-    | { status: "wrong_mode"; actualMode: GameTargetMode | "catalog-census" };
+    | { status: "wrong_mode"; actualMode: GameTargetMode | "catalog-census" | "catalog-census-v4" };
   placeBet(userId: string, displayHandle: string, choice: BetChoice): "accepted" | "closed";
   score(userId: string): { points: number; streak: number };
   board(): string;
@@ -92,7 +92,7 @@ export class CommandRouter {
       if (queued.status === "full") return "Queue is full. Try again after a round.";
       if (queued.status === "stopped") return "Audits are stopped by the kill switch.";
       if (queued.status === "wrong_mode") {
-        if (queued.actualMode === "catalog-census") return `${alias} is a catalog census target. Use !national.`;
+        if (queued.actualMode === "catalog-census" || queued.actualMode === "catalog-census-v4") return `${alias} is a catalog census target. Use !national.`;
         return `${alias} is for !${queued.actualMode === "knock" ? "knock" : "audit"}.`;
       }
       return `Unknown ${mode === "knock" ? "knock" : "audit"} alias.`;

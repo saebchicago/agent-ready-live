@@ -178,6 +178,9 @@ h1 span { color: var(--lime); }
 .national-lens { margin-top: 16px; padding: 12px 16px; border: 1px solid rgba(80,230,255,.3); border-radius: 14px; background: rgba(80,230,255,.05); font-size: 13px; line-height: 1.35; }
 .national-lens p { margin: 4px 0; }
 .national-lens p:last-child { color: var(--cyan); font-weight: 800; }
+.legacy-ckan-line { padding: 8px 10px; border-left: 4px solid var(--amber); color: var(--amber); font-weight: 800; }
+.legacy-ckan-explainer { margin: 8px 0; padding: 8px 12px; border: 1px solid rgba(255,204,102,.35); border-radius: 10px; background: rgba(255,204,102,.04); }
+.legacy-ckan-explainer p { margin: 4px 0; }
 .platform-terms-message { margin: 12px 0; color: var(--amber); font-size: 24px; font-weight: 900; }
 .fixit-card { margin-top: 9px; padding: 10px 13px; border: 1px solid rgba(255,204,102,.4); border-radius: 10px; color: #f6ddad; font-size: 13px; }
 .fixit-card p { margin: 4px 0; }

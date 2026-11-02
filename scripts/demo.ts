@@ -7,6 +7,7 @@ import { ReplayFetcher } from "../src/audit/fetcher.js";
 import type { AuditRecording } from "../src/audit/fetcher.js";
 import { createFixItCard } from "../src/audit/fixit.js";
 import { loadLatestNationalCensus } from "../src/audit/census.js";
+import { loadLatestDataGovV4Census } from "../src/audit/census-v4.js";
 import { targets } from "../src/config.js";
 import { GameEngine } from "../src/server/game.js";
 import { OverlayServer } from "../src/server/server.js";
@@ -36,6 +37,8 @@ export async function runDemo(smoke = false): Promise<void> {
     const previous = recordings.get(recording.alias);
     if (previous === undefined || previous.recordedAt < recording.recordedAt) recordings.set(recording.alias, recording);
   }
+  const nationalCensus = await loadLatestNationalCensus();
+  const nationalCensusV4 = await loadLatestDataGovV4Census();
   let game: GameEngine | undefined;
   const fetcher = new ReplayFetcher({
     timeScale: 0.01,
@@ -51,7 +54,8 @@ export async function runDemo(smoke = false): Promise<void> {
     mvpMs: smoke ? 5 : 500,
     announce: (message) => console.log(`[chat] ${message}`),
     fixItForTarget: (target, checks) => createFixItCard(target, recordings.get(target.alias), checks),
-    nationalCensus: await loadLatestNationalCensus(),
+    ...(nationalCensus === undefined ? {} : { nationalCensus }),
+    ...(nationalCensusV4 === undefined ? {} : { nationalCensusV4 }),
   });
   const overlay = new OverlayServer({ store: game.store, assetRoot: resolve("overlay/dist"), port: 3000 });
   const url = await overlay.start();
@@ -72,7 +76,7 @@ export async function runDemo(smoke = false): Promise<void> {
   try {
     for (const alias of aliases) {
       const target = targetByAlias(alias);
-      if (target.mode === "catalog-census") continue;
+      if (target.mode === "catalog-census" || target.mode === "catalog-census-v4") continue;
       const result = game.queueAudit({ alias, mode: target.mode, requestedBy: "Offline judge demo" });
       if (result.status !== "queued") throw new Error(`Could not queue demo round ${alias}: ${result.status}`);
       await waitForRound(alias, game);

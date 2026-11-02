@@ -26,6 +26,8 @@ export const ROBOT_USER_AGENT = "AgentReadyLive/0.1";
 export type HttpMethod = "GET" | "HEAD";
 export type FetchErrorCode =
   | "AUDIT_ALREADY_ENDED"
+  | "API_KEY_TARGET_NOT_ALLOWED"
+  | "API_KEY_REDIRECT_BLOCKED"
   | "BLOCKED_BY_WAF"
   | "BUDGET_EXCEEDED"
   | "HOST_NOT_ALLOWLISTED"
@@ -104,6 +106,7 @@ export interface AuditSession {
   readonly requestCount: number;
   robots(): Promise<RobotsPolicy>;
   request(url: string | URL, method: HttpMethod): Promise<FetchResponse>;
+  requestWithApiKey(url: string | URL, key: string): Promise<FetchResponse>;
 }
 
 export interface Fetcher {
@@ -166,7 +169,7 @@ export interface LiveFetcherOptions {
 }
 
 interface SessionBackend {
-  next(url: URL, method: HttpMethod): Promise<FetchResponse>;
+  next(url: URL, method: HttpMethod, headers?: Readonly<Record<string, string>>): Promise<FetchResponse>;
 }
 
 interface SessionOptions {
@@ -186,7 +189,10 @@ function delay(ms: number): Promise<void> {
 }
 
 function budgetFor(mode: TargetMode): number {
-  return mode === "knock" ? 2 : 3;
+  if (mode === "knock") return 2;
+  if (mode === "catalog-census-v4") return 7;
+  if (mode === "catalog-census") return 3;
+  return 3;
 }
 
 function responseHeaders(
@@ -513,6 +519,28 @@ class GuardedSession implements AuditSession {
   }
 
   async request(input: string | URL, method: HttpMethod): Promise<FetchResponse> {
+    return await this.requestWithHeaders(input, method, {});
+  }
+
+  async requestWithApiKey(input: string | URL, key: string): Promise<FetchResponse> {
+    const target = this.options.target;
+    const url = input instanceof URL ? new URL(input) : new URL(input);
+    if (
+      target.alias !== "datagov-v4" || target.host !== "api.gsa.gov" ||
+      target.mode !== "catalog-census-v4" || url.hostname !== target.host ||
+      !["/technology/datagov/v4/api/organizations", "/technology/datagov/v4/search"].includes(url.pathname) ||
+      key.trim().length === 0
+    ) {
+      throw new FetcherError("API_KEY_TARGET_NOT_ALLOWED", "API key requests are restricted to configured Data.gov v4 endpoints");
+    }
+    return await this.requestWithHeaders(url, "GET", { "X-Api-Key": key });
+  }
+
+  private async requestWithHeaders(
+    input: string | URL,
+    method: HttpMethod,
+    headers: Readonly<Record<string, string>>,
+  ): Promise<FetchResponse> {
     if (method !== "GET" && method !== "HEAD") {
       throw new FetcherError("METHOD_NOT_ALLOWED", `Method ${String(method)} is not allowed`);
     }
@@ -532,7 +560,7 @@ class GuardedSession implements AuditSession {
       this.ended = true;
       throw new FetcherError("ROBOTS_DISALLOWED", `robots.txt disallows ${url.pathname}`);
     }
-    return await this.serialRequest(() => this.follow(url, method, false));
+    return await this.serialRequest(() => this.follow(url, method, false, headers));
   }
 
   private async serialRequest<T>(operation: () => Promise<T>): Promise<T> {
@@ -572,6 +600,7 @@ class GuardedSession implements AuditSession {
     initialUrl: URL,
     method: HttpMethod,
     retrievingRobots: boolean,
+    headers: Readonly<Record<string, string>> = {},
   ): Promise<FetchResponse> {
     if (!retrievingRobots && this.ended) {
       throw new FetcherError("AUDIT_ALREADY_ENDED", "The audit stopped after a terminal response");
@@ -579,6 +608,12 @@ class GuardedSession implements AuditSession {
     let url = new URL(initialUrl);
     for (let redirects = 0; redirects <= 3; redirects += 1) {
       assertAllowedUrl(url, this.options.target);
+      if ("X-Api-Key" in headers && (
+        url.origin !== initialUrl.origin || url.pathname !== initialUrl.pathname ||
+        this.options.target.alias !== "datagov-v4" || this.options.target.host !== "api.gsa.gov"
+      )) {
+        throw new FetcherError("API_KEY_REDIRECT_BLOCKED", "API key redirect left the configured Data.gov endpoint");
+      }
       if (!retrievingRobots && this.policy !== undefined && !this.policy.isAllowed(url.toString())) {
         this.ended = true;
         throw new FetcherError("ROBOTS_DISALLOWED", `robots.txt disallows ${url.pathname}`);
@@ -595,7 +630,7 @@ class GuardedSession implements AuditSession {
       let response: FetchResponse;
       const started = this.options.now();
       try {
-        response = await this.options.backend.next(url, method);
+        response = await this.options.backend.next(url, method, headers);
       } catch (error) {
         if (error instanceof FetcherError && error.partialResponse !== undefined) {
           this.options.onExchange?.(recorded(error.partialResponse, true));
@@ -707,7 +742,7 @@ export class LiveFetcher implements Fetcher {
       assertTargetAllowlisted(target, this.allowlist);
       assertTargetEligible(target);
       const backend: SessionBackend = {
-        next: async (url, method) => {
+        next: async (url, method, requestHeaders = {}) => {
           const started = Date.now();
           const addresses = await resolveBeforeDeadline(
             this.resolver,
@@ -729,7 +764,7 @@ export class LiveFetcher implements Fetcher {
           const response = await this.transport({
             url,
             method,
-            headers: { "user-agent": this.userAgent, accept: "*/*" },
+            headers: { "user-agent": this.userAgent, accept: "*/*", ...requestHeaders },
             address,
             timeoutMs: remainingMs,
             maxBytes: MAX_RESPONSE_BYTES,
@@ -889,7 +924,7 @@ export function parseRecording(value: unknown): AuditRecording {
   if (
     input.schemaVersion !== 1 ||
     typeof input.alias !== "string" ||
-    (input.mode !== "knock" && input.mode !== "audit" && input.mode !== "catalog-census") ||
+    (input.mode !== "knock" && input.mode !== "audit" && input.mode !== "catalog-census" && input.mode !== "catalog-census-v4") ||
     typeof input.recordedAt !== "string" ||
     !Array.isArray(input.exchanges)
   ) {

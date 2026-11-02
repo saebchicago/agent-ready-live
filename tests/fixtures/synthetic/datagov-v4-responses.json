@@ -1,0 +1,29 @@
+{
+  "case": "synthetic Data.gov API v4 responses, not a recorded response",
+  "organizations": {
+    "total_publishers": 5,
+    "organizations": [
+      { "slug": "michigan", "name": "Michigan Open Data", "organization_type": "State", "dataset_count": 100 },
+      { "slug": "detroit", "name": "Detroit Open Data", "organization_type": "City", "dataset_count": 120 },
+      { "slug": "chicago", "name": "Chicago Data Portal", "organization_type": "City", "dataset_count": 200 },
+      { "slug": "nyc", "name": "New York City Open Data", "organization_type": "City", "dataset_count": 300 },
+      { "slug": "boston", "name": "Boston Open Data", "organization_type": "City", "dataset_count": 60 }
+    ]
+  },
+  "organizationsMissingBoston": {
+    "total_publishers": 4,
+    "organizations": [
+      { "slug": "michigan", "name": "Michigan Open Data", "organization_type": "State", "dataset_count": 100 },
+      { "slug": "detroit", "name": "Detroit Open Data", "organization_type": "City", "dataset_count": 120 },
+      { "slug": "chicago", "name": "Chicago Data Portal", "organization_type": "City", "dataset_count": 200 },
+      { "slug": "nyc", "name": "New York City Open Data", "organization_type": "City", "dataset_count": 300 }
+    ]
+  },
+  "search": {
+    "results": [
+      { "dcat": { "license": "https://creativecommons.org/publicdomain/zero/1.0/" } },
+      { "dcat": { "license": "" } },
+      { "dcat": {} }
+    ]
+  }
+}

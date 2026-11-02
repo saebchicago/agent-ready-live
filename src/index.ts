@@ -4,6 +4,7 @@ import { CommandRouter } from "./commands.js";
 import { LiveFetcher } from "./audit/fetcher.js";
 import { GameEngine } from "./server/game.js";
 import { loadLatestNationalCensus } from "./audit/census.js";
+import { loadLatestDataGovV4Census } from "./audit/census-v4.js";
 import { OverlayServer } from "./server/server.js";
 import { TwitchAuth } from "./twitch/auth.js";
 import { ChatSender } from "./twitch/chat.js";
@@ -51,6 +52,7 @@ async function main(): Promise<void> {
     channelUserId: config.channelUserId,
   });
   const nationalCensus = await loadLatestNationalCensus();
+  const nationalCensusV4 = await loadLatestDataGovV4Census();
   let game: GameEngine | undefined;
   const fetcher = new LiveFetcher({
     repoUrl: config.repoUrl,
@@ -63,6 +65,7 @@ async function main(): Promise<void> {
     targets: config.targets,
     fetcher,
     ...(nationalCensus === undefined ? {} : { nationalCensus }),
+    ...(nationalCensusV4 === undefined ? {} : { nationalCensusV4 }),
     announce: (message) => void chat.send(message),
   });
   const overlay = new OverlayServer({ store: game.store, assetRoot: resolve("overlay/dist") });

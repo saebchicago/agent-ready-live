@@ -2,6 +2,7 @@ import type { AuditRecording, RecordedExchange } from "./fetcher.js";
 import type { Target } from "../config.js";
 import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
+import { legacyCkanRoundLine, LEGACY_CKAN_EXPLAINER } from "./census-v4.js";
 
 export interface FacetCount {
   name: string;
@@ -23,6 +24,8 @@ export interface NationalCensus {
   namedPublisherCounts: Record<string, number | undefined>;
   truncated: boolean;
   notes: string[];
+  legacyRoundLine?: string;
+  legacyExplainer?: typeof LEGACY_CKAN_EXPLAINER;
 }
 
 export const CENSUS_PUBLISHER_TERMS = ["Michigan", "Detroit", "Chicago", "New York", "Boston"] as const;
@@ -119,6 +122,7 @@ export function deriveNationalCensus(
   if (callA && (callA.status < 200 || callA.status >= 300)) notes.push(`Call A returned HTTP ${callA.status}; no retry was made.`);
   if (callB && (callB.status < 200 || callB.status >= 300)) notes.push(`Call B returned HTTP ${callB.status}; no retry was made.`);
 
+  const legacyRoundLine = legacyCkanRoundLine(callA?.status, probedOn);
   return {
     probedOn,
     totalDatasets: total,
@@ -133,6 +137,7 @@ export function deriveNationalCensus(
     namedPublisherCounts,
     truncated,
     notes,
+    ...(legacyRoundLine === undefined ? {} : { legacyRoundLine, legacyExplainer: LEGACY_CKAN_EXPLAINER }),
   };
 }
 

@@ -5,6 +5,7 @@ import { ReplayFetcher, type AuditRecording } from "../src/audit/fetcher.js";
 import { targets } from "../src/config.js";
 import { classifyDoorLadder } from "../src/audit/ladder.js";
 import { deriveNationalCensus, exchangesForCensus } from "../src/audit/census.js";
+import { dataGovV4CensusFromRecording, formatDataGovV4National } from "../src/audit/census-v4.js";
 
 async function main(): Promise<void> {
   const fixtureDirectory = resolve("fixtures/recorded");
@@ -27,9 +28,15 @@ async function main(): Promise<void> {
       const census = deriveNationalCensus(callA, callB, recording?.recordedAt.slice(0, 10) ?? "not available", Boolean(callA?.truncated || callB?.truncated), recording?.censusError);
       const censusFacts = recording === undefined
         ? "No local census fixture is recorded"
-        : `Total ${census.totalDatasets ?? "not available in this catalog"}; licenses ${census.licenseFacetAvailable ? census.licenses.length : "not available in this catalog"}; publishers ${census.publishersAvailable ? census.publishers.length : "not available in this catalog"}${census.truncated ? `; ${[callA?.truncated ? "Call A" : "", callB?.truncated ? "Call B" : ""].filter(Boolean).join(" and ") || "Census response"} truncated at 5 MB` : ""}`;
+        : `${census.legacyRoundLine ?? `Total ${census.totalDatasets ?? "not available in this catalog"}; licenses ${census.licenseFacetAvailable ? census.licenses.length : "not available in this catalog"}; publishers ${census.publishersAvailable ? census.publishers.length : "not available in this catalog"}`}${census.truncated ? `; ${[callA?.truncated ? "Call A" : "", callB?.truncated ? "Call B" : ""].filter(Boolean).join(" and ") || "Census response"} truncated at 5 MB` : ""}`;
       const statement = `Probed ${recording?.recordedAt.slice(0, 10) ?? "not available"} | Not a ranking`;
       rows.push(`| ${target.alias} | ${target.mode} | ${target.tos.status} | National lens | ${censusFacts} | ${statement} |`);
+      continue;
+    }
+    if (target.mode === "catalog-census-v4") {
+      const census = recording === undefined ? undefined : dataGovV4CensusFromRecording(recording);
+      const censusFacts = census === undefined ? "No local v4 census fixture is recorded" : formatDataGovV4National(census);
+      rows.push(`| ${target.alias} | ${target.mode} | ${target.tos.status} | National lens | ${censusFacts.replaceAll("|", "\\|")} | ${`Probed ${census?.probedOn ?? "not available"} | Not a ranking`.replaceAll("|", "\\|")} |`);
       continue;
     }
     const fetcher = new ReplayFetcher({

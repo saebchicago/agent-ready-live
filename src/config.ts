@@ -3,8 +3,8 @@ import { homedir } from "node:os";
 import { isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type TargetMode = "knock" | "audit" | "catalog-census";
-export type GameTargetMode = Exclude<TargetMode, "catalog-census">;
+export type TargetMode = "knock" | "audit" | "catalog-census" | "catalog-census-v4";
+export type GameTargetMode = Exclude<TargetMode, "catalog-census" | "catalog-census-v4">;
 export type TargetDialect = "dcat" | "socrata" | "ckan";
 export type TosStatus =
   | "allowed-with-conditions"
@@ -56,7 +56,7 @@ export interface RuntimeConfig extends OAuthConfig {
 
 const TARGETS_PATH = new URL("../config/targets.json", import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL("..", import.meta.url));
-const TARGET_MODES = new Set<TargetMode>(["knock", "audit", "catalog-census"]);
+const TARGET_MODES = new Set<TargetMode>(["knock", "audit", "catalog-census", "catalog-census-v4"]);
 const TARGET_DIALECTS = new Set<TargetDialect>(["dcat", "socrata", "ckan"]);
 const TOS_STATUSES = new Set<TosStatus>([
   "allowed-with-conditions",

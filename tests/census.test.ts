@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { deriveNationalCensus, formatPublisherForChat, censusRequestUrls } from "../src/audit/census.js";
+import { deriveNationalCensus, formatPublisherForChat, censusRequestUrls, nationalCensusFromRecording } from "../src/audit/census.js";
 import type { RecordedExchange } from "../src/audit/fetcher.js";
 import { ReplayFetcher, type AuditRecording } from "../src/audit/fetcher.js";
 import { targets } from "../src/config.js";
@@ -95,5 +95,16 @@ describe("Data.gov catalog census", () => {
     expect(truncated.truncated).toBe(true);
     expect(truncated.publishersAvailable).toBe(false);
     expect(truncated.notes.join(" ")).toContain("Call B was truncated at the 5 MB response cap.");
+  });
+
+  it("keeps the recorded CKAN 404 round line and its explainer", async () => {
+    const recording = JSON.parse(await readFile(resolve("fixtures/recorded/datagov-2026-11-02.json"), "utf8")) as AuditRecording;
+    const census = nationalCensusFromRecording(recording);
+    expect(census.legacyRoundLine).toBe("Legacy CKAN endpoint returned 404 on 2026-11-02. The national catalog API moved to v4. Agents using stale docs fail here.");
+    expect(census.legacyExplainer).toEqual({
+      what: "Using a retired CKAN endpoint as the current national catalog API.",
+      fix: "Publish API version and deprecation notices.",
+      standard: "DCAT-US 3.0",
+    });
   });
 });

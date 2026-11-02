@@ -37,6 +37,8 @@ The demo also plays these recorded rounds: Wikipedia, Boston, NYC, Detroit, Mich
 
 To create the local national-catalog fixture, a maintainer can run `npm run record -- datagov`. This makes one robots request and up to two package search calls. The recorder sanitizes cookie headers. ArcGIS Hub is terms-gated and sends zero requests; Detroit's portal platform terms question remains unresolved, as described in [docs/TOS-REVIEW.md](docs/TOS-REVIEW.md).
 
+The recorded Data.gov legacy CKAN 404 is shown as evidence that agents using stale endpoint documentation can fail. To record the v4 census, run `npm run record -- datagov-v4`. The recorder uses `DATAGOV_API_KEY` only in the `X-Api-Key` request header, makes one organizations call and up to five publisher searches, and omits request headers and the key from fixtures. National publisher/type totals are **Verified** from the organizations response. License shares are **Modeled** from the returned sample of up to 100 records per publisher.
+
 **Verified:** the ArcGIS Hub terms card says, “Publisher says open. Platform says no AI harvesting.” It shows the configured publisher DCAT-US route as a side door, without making a request to ArcGIS Hub.
 
 ## Checks

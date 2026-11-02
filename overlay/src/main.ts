@@ -130,6 +130,17 @@ function render(next: GameState): void {
   visible("boards", next.phase === "idle");
   visible("global-context", next.phase === "idle" && next.globalContextVisible);
   const census = next.nationalCensus;
+  const v4 = next.nationalCensusV4;
+  const countOrMissing = (value: number | undefined): string => value === undefined ? "not available" : String(value);
+  text("national-v4-summary", `${countOrMissing(v4?.publishers)} publishers | ${countOrMissing(v4?.datasets)} datasets | by type: Federal ${countOrMissing(v4?.byType.Federal)}, State ${countOrMissing(v4?.byType.State)}, City ${countOrMissing(v4?.byType.City)}, County ${countOrMissing(v4?.byType.County)} | Probed ${v4?.probedOn ?? "not available"} | Not a ranking`);
+  text("national-v4-label", v4
+    ? "Publisher totals and type counts are Verified from the recorded organizations response where available. Publisher license shares are Modeled from a sample of N records."
+    : "No v4 response recorded. Publisher and type counts are not available; publisher license shares, when available, are Modeled from a sample of N records.");
+  const legacyLine = census?.legacyRoundLine;
+  text("legacy-ckan-line", legacyLine ?? "");
+  visible("legacy-ckan-line", legacyLine !== undefined);
+  visible("legacy-ckan-explainer", legacyLine !== undefined);
+  visible("legacy-census-stats", census?.totalDatasets !== undefined);
   text("national-total", census?.totalDatasets === undefined ? "Total datasets: not available in this catalog" : `Total datasets: ${census.totalDatasets}`);
   text("national-licenses", census?.licenseFacetAvailable
     ? `License counts and share: ${census.licenses.map(({ name, count, share }) => `${name} ${count} (${share === undefined ? "share not available in this catalog" : `${(share * 100).toFixed(2)}%`})`).join("; ") || "none reported"}`
@@ -143,11 +154,23 @@ function render(next: GameState): void {
   text("national-publishers", census?.publishersAvailable
     ? `Top publishers: ${census.publishers.slice(0, 5).map(({ name, count }) => `${name} ${count}`).join("; ") || "none reported"}`
     : "Publishers: not available in this catalog");
-  text("national-matched-publishers", census
-    ? `Named publisher counts: ${Object.entries(census.namedPublisherCounts).map(([name, count]) => `${name} ${count === undefined ? "not available in this catalog" : count}`).join("; ")}`
-    : "Named publisher counts: not available in this catalog");
-  text("national-notes", census?.notes.join(" ") ?? "No local census fixture is recorded.");
-  text("national-probed", `Probed ${census?.probedOn ?? "not available"} | Not a ranking`);
+  const publisherSamples = v4?.publishersBySearch.map((publisher) => {
+    const datasets = publisher.datasetCount === undefined ? "dataset count not available" : `${publisher.datasetCount} datasets`;
+    const sample = publisher.sampleCount === undefined ? "sample not available" : `Modeled: sample of ${publisher.sampleCount} records`;
+    const share = publisher.licenseShare === undefined ? "license share not available" : `${(publisher.licenseShare * 100).toFixed(2)}% have dcat.license`;
+    return `${publisher.name}: ${datasets}; ${share}; ${sample}`;
+  }) ?? [];
+  const missingPublishers = v4?.notInDataGov.map((name) => `${name} not in data.gov`) ?? [];
+  text("national-matched-publishers", v4
+    ? [...publisherSamples, ...missingPublishers].join("; ") || "Publisher matches not available in this API response."
+    : census?.legacyRoundLine
+      ? "Publisher samples are not available until the v4 census is recorded."
+    : census
+      ? `Named publisher counts: ${Object.entries(census.namedPublisherCounts).map(([name, count]) => `${name} ${count === undefined ? "not available in this catalog" : count}`).join("; ")}`
+      : "Named publisher counts: not available in this catalog");
+  const censusNotes = census?.legacyRoundLine ? [] : census?.notes ?? [];
+  text("national-notes", [...(v4?.notes ?? []), ...censusNotes].join(" ") || (census === undefined && v4 === undefined ? "No local national census fixture is recorded." : ""));
+  text("national-probed", `Probed ${v4?.probedOn ?? "not available"} | Not a ranking`);
   renderRows("knock-board", next.leaderboards.knock);
   renderRows("audit-board", next.leaderboards.audit);
 

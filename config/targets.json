@@ -172,5 +172,19 @@
     },
     "tosReviewed": true,
     "notes": "T0 only. Zero requests."
+  },
+  {
+    "alias": "datagov-v4",
+    "name": "Data.gov National Catalog API v4",
+    "host": "api.gsa.gov",
+    "mode": "catalog-census-v4",
+    "tos": {
+      "status": "allowed-with-conditions",
+      "sourceUrl": "https://resources.data.gov/catalog-api/",
+      "evidence": "Public JSON catalog API, key required, 1,000 requests/hour per personal key (read 2026-11-02).",
+      "reviewedOn": "2026-11-02"
+    },
+    "tosReviewed": true,
+    "notes": "Catalog census v4. API key sent only in X-Api-Key request header."
   }
 ]
