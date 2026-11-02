@@ -5,6 +5,7 @@ import { LiveFetcher } from "./audit/fetcher.js";
 import { GameEngine } from "./server/game.js";
 import { loadLatestNationalCensus } from "./audit/census.js";
 import { loadLatestDataGovV4Census } from "./audit/census-v4.js";
+import { loadLatestCensusMeaning } from "./audit/census-meaning.js";
 import { OverlayServer } from "./server/server.js";
 import { TwitchAuth } from "./twitch/auth.js";
 import { ChatSender } from "./twitch/chat.js";
@@ -53,6 +54,7 @@ async function main(): Promise<void> {
   });
   const nationalCensus = await loadLatestNationalCensus();
   const nationalCensusV4 = await loadLatestDataGovV4Census();
+  const censusMeaning = await loadLatestCensusMeaning();
   let game: GameEngine | undefined;
   const fetcher = new LiveFetcher({
     repoUrl: config.repoUrl,
@@ -66,6 +68,7 @@ async function main(): Promise<void> {
     fetcher,
     ...(nationalCensus === undefined ? {} : { nationalCensus }),
     ...(nationalCensusV4 === undefined ? {} : { nationalCensusV4 }),
+    ...(censusMeaning === undefined ? {} : { censusMeaning }),
     announce: (message) => void chat.send(message),
   });
   const overlay = new OverlayServer({ store: game.store, assetRoot: resolve("overlay/dist") });

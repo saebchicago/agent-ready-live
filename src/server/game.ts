@@ -9,6 +9,7 @@ import { classifyDoorLadder, sideDoorLine, type LadderPlacement } from "../audit
 import { formatFixItForChat, type FixItCard } from "../audit/fixit.js";
 import type { NationalCensus } from "../audit/census.js";
 import { formatDataGovV4National, formatDataGovV4Publisher, type DataGovV4Census } from "../audit/census-v4.js";
+import { formatCensusTrap, type CensusMeaning } from "../audit/census-meaning.js";
 import type { Target, TargetMode, GameTargetMode } from "../config.js";
 import {
   GameStateStore,
@@ -66,6 +67,7 @@ export interface GameEngineOptions {
   fixItForTarget?: (target: Target, checks: readonly CheckResult[]) => FixItCard | undefined;
   nationalCensus?: NationalCensus;
   nationalCensusV4?: DataGovV4Census;
+  censusMeaning?: CensusMeaning;
 }
 
 export class GameEngine {
@@ -89,6 +91,7 @@ export class GameEngine {
     this.store = options.store ?? new GameStateStore(options.runtimeMode);
     this.store.dispatch({ type: "NATIONAL_LENS", now: (options.now ?? Date.now)(), census: options.nationalCensus });
     this.store.dispatch({ type: "NATIONAL_LENS_V4", now: (options.now ?? Date.now)(), census: options.nationalCensusV4 });
+    this.store.dispatch({ type: "CENSUS_MEANING", now: (options.now ?? Date.now)(), census: options.censusMeaning });
     this.now = options.now ?? Date.now;
     this.sleep = options.sleep ?? ((ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms)));
     this.announce = options.announce ?? (() => undefined);
@@ -103,7 +106,7 @@ export class GameEngine {
     if (state.stopped) return { status: "stopped" };
     const target = this.options.targets.find(({ alias }) => alias === request.alias);
     if (target === undefined) return { status: "unknown" };
-    if (target.mode === "catalog-census" || target.mode === "catalog-census-v4" || target.mode !== request.mode) return { status: "wrong_mode", actualMode: target.mode };
+    if (target.mode === "catalog-census" || target.mode === "catalog-census-v4" || target.mode === "meaning" || target.mode !== request.mode) return { status: "wrong_mode", actualMode: target.mode };
     if (state.queue.length >= QUEUE_CAP) return { status: "full" };
 
     this.store.dispatch({
@@ -182,6 +185,11 @@ export class GameEngine {
     return formatDataGovV4Publisher(this.store.getState().nationalCensusV4, name);
   }
 
+  trap(): string {
+    const meaning = this.store.getState().censusMeaning;
+    return meaning === undefined ? "Census meaning fixture not available." : formatCensusTrap(meaning).slice(0, 450);
+  }
+
   stop(): void {
     this.store.dispatch({ type: "STOP", now: this.now() });
     void this.say("Kill switch engaged. Queue cleared and audit stopped.");
@@ -212,7 +220,7 @@ export class GameEngine {
           this.store.dispatch({ type: "FINISH_AUDIT", now: this.now() });
           continue;
         }
-        if (target.mode === "catalog-census" || target.mode === "catalog-census-v4") {
+        if (target.mode === "catalog-census" || target.mode === "catalog-census-v4" || target.mode === "meaning") {
           this.store.dispatch({ type: "AUDIT_ERROR", now: this.now(), message: "Use !national for the catalog census." });
           this.store.dispatch({ type: "FINISH_AUDIT", now: this.now() });
           continue;
@@ -228,7 +236,7 @@ export class GameEngine {
   }
 
   private async runTarget(target: Target): Promise<void> {
-    if (target.mode === "catalog-census" || target.mode === "catalog-census-v4") return;
+    if (target.mode === "catalog-census" || target.mode === "catalog-census-v4" || target.mode === "meaning") return;
     try {
       await this.say(`Starting ${target.alias}. The robot approaches the door.`);
       const audit = await runAuditChecks(

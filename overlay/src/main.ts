@@ -1,6 +1,7 @@
 import type { GameState, LeaderboardRow } from "../../src/server/state.js";
 import { DOOR_LADDER } from "../../src/audit/ladder.js";
 import { stageScale } from "./layout.js";
+import { CENSUS_NOTICE } from "../../src/audit/census-notice.js";
 
 function element<T extends HTMLElement>(id: string): T {
   const value = document.getElementById(id);
@@ -171,6 +172,26 @@ function render(next: GameState): void {
   const censusNotes = census?.legacyRoundLine ? [] : census?.notes ?? [];
   text("national-notes", [...(v4?.notes ?? []), ...censusNotes].join(" ") || (census === undefined && v4 === undefined ? "No local national census fixture is recorded." : ""));
   text("national-probed", `Probed ${v4?.probedOn ?? "not available"} | Not a ranking`);
+  const meaning = next.censusMeaning;
+  visible("census-meaning-panel", meaning !== undefined && next.phase === "idle");
+  if (meaning !== undefined) {
+    text("census-api-notice", CENSUS_NOTICE);
+    text("census-sample-meta", `${meaning.source === "synthetic" ? "SYNTHETIC REPLAY FIXTURE" : "REPLAY"} | Probed ${meaning.probedOn} | ${meaning.tracts.length} sampled Wayne County tracts`);
+    text("census-error-count", `${meaning.errorTracts} of ${meaning.tracts.length} tracts return an error code`);
+    const renderTracts = (id: string, tracts: typeof meaning.naiveLowest, naive: boolean): void => {
+      const rows = tracts.map((tract) => {
+        const item = document.createElement("li");
+        const raw = naive ? `raw income ${tract.rawIncome ?? "missing"}` : `$${tract.income} ±$${tract.marginOfError}`;
+        const reason = tract.errorReasons.length > 0 ? `; treated as missing: ${tract.errorReasons.join("; ")}` : "";
+        item.textContent = `${tract.name} (${tract.tract}): ${raw}${reason}`;
+        return item;
+      });
+      const list = element<HTMLOListElement>(id);
+      list.replaceChildren(...rows);
+    };
+    renderTracts("census-naive-list", meaning.naiveLowest, true);
+    renderTracts("census-corrected-list", meaning.correctedLowest, false);
+  }
   renderRows("knock-board", next.leaderboards.knock);
   renderRows("audit-board", next.leaderboards.audit);
 

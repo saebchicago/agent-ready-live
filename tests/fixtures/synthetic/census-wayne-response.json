@@ -1,0 +1,19 @@
+{
+  "rows": [
+    ["NAME", "B19013_001E", "B19013_001M", "B11001_001E", "state", "county", "tract"],
+    ["Census Tract 0001, Wayne County, Michigan", "45000", "1200", "800", "26", "163", "000100"],
+    ["Census Tract 0002, Wayne County, Michigan", "-666666666", "-999999999", "-888888888", "26", "163", "000200"],
+    ["Census Tract 0003, Wayne County, Michigan", "52000", "1500", "1000", "26", "163", "000300"],
+    ["Census Tract 0004, Wayne County, Michigan", "38000", "900", "700", "26", "163", "000400"],
+    ["Census Tract 0005, Wayne County, Michigan", "61000", "1800", "1100", "26", "163", "000500"],
+    ["Census Tract 0006, Wayne County, Michigan", "-555555555", "-333333333", "-222222222", "26", "163", "000600"],
+    ["Census Tract 0007, Wayne County, Michigan", "49000", "1300", "900", "26", "163", "000700"],
+    ["Census Tract 0008, Wayne County, Michigan", "33000", "800", "650", "26", "163", "000800"],
+    ["Census Tract 0009, Wayne County, Michigan", "72000", "2000", "1200", "26", "163", "000900"],
+    ["Census Tract 0010, Wayne County, Michigan", "41000", "1100", "750", "26", "163", "001000"],
+    ["Census Tract 0011, Wayne County, Michigan", "56000", "1600", "950", "26", "163", "001100"],
+    ["Census Tract 0012, Wayne County, Michigan", "47000", "1400", "850", "26", "163", "001200"],
+    ["Census Tract 0013, Wayne County, Michigan", "68000", "1900", "1050", "26", "163", "001300"],
+    ["Census Tract 0014, Wayne County, Michigan", "39000", "1000", "720", "26", "163", "001400"]
+  ]
+}

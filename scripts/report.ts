@@ -6,6 +6,7 @@ import { targets } from "../src/config.js";
 import { classifyDoorLadder } from "../src/audit/ladder.js";
 import { deriveNationalCensus, exchangesForCensus } from "../src/audit/census.js";
 import { dataGovV4CensusFromRecording, formatDataGovV4National } from "../src/audit/census-v4.js";
+import { censusMeaningFromRecording } from "../src/audit/census-meaning.js";
 
 async function main(): Promise<void> {
   const fixtureDirectory = resolve("fixtures/recorded");
@@ -37,6 +38,14 @@ async function main(): Promise<void> {
       const census = recording === undefined ? undefined : dataGovV4CensusFromRecording(recording);
       const censusFacts = census === undefined ? "No local v4 census fixture is recorded" : formatDataGovV4National(census);
       rows.push(`| ${target.alias} | ${target.mode} | ${target.tos.status} | National lens | ${censusFacts.replaceAll("|", "\\|")} | ${`Probed ${census?.probedOn ?? "not available"} | Not a ranking`.replaceAll("|", "\\|")} |`);
+      continue;
+    }
+    if (target.mode === "meaning") {
+      const meaning = recording === undefined ? undefined : censusMeaningFromRecording(recording);
+      const facts = meaning === undefined
+        ? "Census meaning fixture not found in sample"
+        : `${meaning.errorTracts} of ${meaning.tracts.length} tracts return an error code; naive and corrected lists generated from fixture values`;
+      rows.push(`| ${target.alias} | ${target.mode} | ${target.tos.status} | Meaning check | ${facts} | Probed ${meaning?.probedOn ?? "not available"} |`);
       continue;
     }
     const fetcher = new ReplayFetcher({

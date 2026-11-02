@@ -5,6 +5,7 @@ import { targets } from "../src/config.js";
 import { runAuditChecks } from "../src/audit/checks.js";
 import { censusRequestUrls } from "../src/audit/census.js";
 import { dataGovV4OrganizationsUrl, dataGovV4SearchUrl, publisherRequestsFromResponse } from "../src/audit/census-v4.js";
+import { censusMeaningUrl } from "../src/audit/census-meaning.js";
 import {
   LiveFetcher,
   type AuditRecording,
@@ -31,13 +32,15 @@ export async function assertRecordingPathAvailable(path: string): Promise<void> 
 
 export function redactApiKeyFromExchange(exchange: RecordedExchange, key: string): RecordedExchange {
   if (key.length === 0) return exchange;
+  const safeUrl = new URL(exchange.url);
+  if (safeUrl.hostname === "api.census.gov") safeUrl.searchParams.delete("key");
   const headers = Object.fromEntries(Object.entries(exchange.headers).map(([name, value]) => [
     name,
     value.includes(key) ? value.replaceAll(key, "[REDACTED]") : value,
   ]));
   const decoded = Buffer.from(exchange.body, exchange.bodyEncoding).toString("utf8");
   const safeBody = decoded.includes(key) ? Buffer.from(decoded.replaceAll(key, "[REDACTED]"), "utf8").toString("base64") : exchange.body;
-  return { ...exchange, headers, body: safeBody };
+  return { ...exchange, url: safeUrl.toString(), headers, body: safeBody };
 }
 
 function safeErrorMessage(error: unknown, key: string | undefined): string {
@@ -59,8 +62,10 @@ export async function main(): Promise<void> {
   const path = resolve(directory, `${target.alias}-${date}.json`);
   await assertRecordingPathAvailable(path);
 
-  const apiKey = target.mode === "catalog-census-v4" ? process.env.DATAGOV_API_KEY?.trim() : undefined;
+  const apiKey = target.mode === "catalog-census-v4" ? process.env.DATAGOV_API_KEY?.trim()
+    : target.mode === "meaning" ? process.env.CENSUS_API_KEY?.trim() : undefined;
   if (target.mode === "catalog-census-v4" && !apiKey) throw new Error("Missing required environment variable DATAGOV_API_KEY");
+  if (target.mode === "meaning" && !apiKey) throw new Error("Missing required environment variable CENSUS_API_KEY");
   const exchanges: RecordedExchange[] = [];
   let censusError: string | undefined;
   const fetcher = new LiveFetcher({
@@ -130,6 +135,24 @@ export async function main(): Promise<void> {
           censusError = safeErrorMessage(error, apiKey);
           break;
         }
+      }
+    });
+  } else if (target.mode === "meaning") {
+    await fetcher.runAudit(target, async (session) => {
+      let policy;
+      try {
+        policy = await session.robots();
+      } catch (error) {
+        censusError = safeErrorMessage(error, apiKey);
+        return;
+      }
+      if (policy.stopped) return;
+      const url = censusMeaningUrl(target);
+      if (!policy.isAllowed(url)) return;
+      try {
+        await session.requestWithCensusKey(url, apiKey!);
+      } catch (error) {
+        censusError = safeErrorMessage(error, apiKey);
       }
     });
   } else {

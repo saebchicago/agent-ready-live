@@ -217,3 +217,8 @@ h1 span { color: var(--lime); }
 @keyframes robot-breathe { 50% { transform: scale(.97); } }
 @keyframes cheer { to { transform: rotate(-18deg); } }
 @keyframes pulse { 50% { box-shadow: 0 0 18px rgba(255,204,102,.25); } }
+.census-meaning-panel { max-height: 480px; overflow: hidden; }
+.census-api-notice { font-weight: 700; color: #ffe0a6; }
+.census-list-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 15px; }
+.census-list-columns ol { margin: 6px 0; padding-left: 24px; }
+.census-list-columns li { margin: 2px 0; }

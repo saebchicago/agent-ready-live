@@ -186,5 +186,19 @@
     },
     "tosReviewed": true,
     "notes": "Catalog census v4. API key sent only in X-Api-Key request header."
+  },
+  {
+    "alias": "census-wayne",
+    "name": "Census Bureau API, Wayne County",
+    "host": "api.census.gov",
+    "mode": "meaning",
+    "tos": {
+      "status": "allowed-with-conditions",
+      "sourceUrl": "https://census.gov/data/developers/terms-of-service.html",
+      "evidence": "API use permitted; apps must display the notice 'This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.' (read 2026-11-01)",
+      "reviewedOn": "2026-11-01"
+    },
+    "tosReviewed": true,
+    "notes": "One ACS 5-year 2024 Wayne County tract request; Census API key is never persisted."
   }
 ]

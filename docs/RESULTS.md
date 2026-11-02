@@ -17,6 +17,7 @@ Check outcomes summarize only the recorded sample. Missing recordings are report
 | datagov | catalog-census | allowed-with-conditions | National lens | Legacy CKAN endpoint returned 404 on 2026-11-02. The national catalog API moved to v4. Agents using stale docs fail here. | Probed 2026-11-02 | Not a ranking |
 | arcgis-hub | knock | prohibited | Closed by terms | T0=DOOR_CLOSED_BY_TERMS | Knock only: no catalog sampled \| Probed 2026-11-02 \| Rubric v1 \| Not a ranking of agency quality |
 | datagov-v4 | catalog-census-v4 | allowed-with-conditions | National lens | No local v4 census fixture is recorded | Probed not available \| Not a ranking |
+| census-wayne | meaning | allowed-with-conditions | Meaning check | Census meaning fixture not found in sample | Probed not available |
 
 ## Needs source
 

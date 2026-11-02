@@ -27,7 +27,7 @@ export interface CommandGame {
     | { status: "full" }
     | { status: "stopped" }
     | { status: "unknown" }
-    | { status: "wrong_mode"; actualMode: GameTargetMode | "catalog-census" | "catalog-census-v4" };
+    | { status: "wrong_mode"; actualMode: GameTargetMode | "catalog-census" | "catalog-census-v4" | "meaning" };
   placeBet(userId: string, displayHandle: string, choice: BetChoice): "accepted" | "closed";
   score(userId: string): { points: number; streak: number };
   board(): string;
@@ -35,6 +35,7 @@ export interface CommandGame {
   fix?(): string | undefined;
   national?(): string;
   publisher?(name: string): string;
+  trap?(): string;
   stop(): void;
 }
 
@@ -93,6 +94,7 @@ export class CommandRouter {
       if (queued.status === "stopped") return "Audits are stopped by the kill switch.";
       if (queued.status === "wrong_mode") {
         if (queued.actualMode === "catalog-census" || queued.actualMode === "catalog-census-v4") return `${alias} is a catalog census target. Use !national.`;
+        if (queued.actualMode === "meaning") return `${alias} is a Census meaning check. Use !trap.`;
         return `${alias} is for !${queued.actualMode === "knock" ? "knock" : "audit"}.`;
       }
       return `Unknown ${mode === "knock" ? "knock" : "audit"} alias.`;
@@ -123,6 +125,7 @@ export class CommandRouter {
       if (!name) return "Usage: !publisher <name>";
       return game.publisher?.(name) ?? "Publisher data not available in this catalog.";
     }
+    if (command.name === "trap") return game.trap?.() ?? "Census meaning fixture not available.";
 
     if (command.name === "stop") {
       if (message.isBroadcaster !== true && message.isModerator !== true) {
@@ -137,7 +140,7 @@ export class CommandRouter {
 
   private isSupported(name: string): boolean {
     if (name === "ping" || name === "whois") return true;
-    return this.game !== undefined && ["knock", "audit", "y", "n", "score", "board", "why", "fix", "national", "publisher", "stop"].includes(name);
+    return this.game !== undefined && ["knock", "audit", "y", "n", "score", "board", "why", "fix", "national", "publisher", "trap", "stop"].includes(name);
   }
 
   private takeCooldown(userId: string, name: string): boolean {

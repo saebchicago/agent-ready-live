@@ -8,6 +8,7 @@ import type { AuditRecording } from "../src/audit/fetcher.js";
 import { createFixItCard } from "../src/audit/fixit.js";
 import { loadLatestNationalCensus } from "../src/audit/census.js";
 import { loadLatestDataGovV4Census } from "../src/audit/census-v4.js";
+import { loadLatestCensusMeaning } from "../src/audit/census-meaning.js";
 import { targets } from "../src/config.js";
 import { GameEngine } from "../src/server/game.js";
 import { OverlayServer } from "../src/server/server.js";
@@ -39,6 +40,7 @@ export async function runDemo(smoke = false): Promise<void> {
   }
   const nationalCensus = await loadLatestNationalCensus();
   const nationalCensusV4 = await loadLatestDataGovV4Census();
+  const censusMeaning = await loadLatestCensusMeaning({ syntheticFallback: true });
   let game: GameEngine | undefined;
   const fetcher = new ReplayFetcher({
     timeScale: 0.01,
@@ -56,12 +58,13 @@ export async function runDemo(smoke = false): Promise<void> {
     fixItForTarget: (target, checks) => createFixItCard(target, recordings.get(target.alias), checks),
     ...(nationalCensus === undefined ? {} : { nationalCensus }),
     ...(nationalCensusV4 === undefined ? {} : { nationalCensusV4 }),
+    ...(censusMeaning === undefined ? {} : { censusMeaning }),
   });
   const overlay = new OverlayServer({ store: game.store, assetRoot: resolve("overlay/dist"), port: 3000 });
   const url = await overlay.start();
   console.log(`Offline REPLAY demo ready at ${url}.`);
   if (!smoke) {
-    console.log("Type !y, !n, !whois, !knock <alias>, !audit <alias>, !score, !board, !why, !fix, !national, or !publisher <name> and press Enter.");
+    console.log("Type !y, !n, !whois, !knock <alias>, !audit <alias>, !score, !board, !why, !fix, !national, !publisher <name>, or !trap and press Enter.");
     const commands = new CommandRouter({ game, displayHandle: () => "Judge" });
     const input = createInterface({ input: process.stdin, output: process.stdout, prompt: "chat> " });
     input.on("line", (text) => {
@@ -81,6 +84,11 @@ export async function runDemo(smoke = false): Promise<void> {
       if (result.status !== "queued") throw new Error(`Could not queue demo round ${alias}: ${result.status}`);
       await waitForRound(alias, game);
       if (!smoke) await new Promise((resolveWait) => setTimeout(resolveWait, 2_500));
+    }
+    if (!smoke && censusMeaning !== undefined) {
+      const commands = new CommandRouter({ game, displayHandle: () => "Judge" });
+      console.log("[chat] Census meaning check round (offline replay fixture).");
+      console.log(`[chat] ${commands.handle({ userId: "offline-judge", userLogin: "judge", text: "!trap" }) ?? ""}`);
     }
     if (smoke) await overlay.stop();
   } catch (error) {

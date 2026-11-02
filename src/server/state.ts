@@ -1,6 +1,7 @@
 import type { CheckResult } from "../audit/checks.js";
 import type { NationalCensus } from "../audit/census.js";
 import type { DataGovV4Census } from "../audit/census-v4.js";
+import type { CensusMeaning } from "../audit/census-meaning.js";
 import type { ExplainerCard } from "../audit/explainers.js";
 import type { LadderPlacement } from "../audit/ladder.js";
 import type { FixItCard } from "../audit/fixit.js";
@@ -136,6 +137,7 @@ export interface GameState {
   globalContextVisible: boolean;
   nationalCensus: NationalCensus | undefined;
   nationalCensusV4: DataGovV4Census | undefined;
+  censusMeaning: CensusMeaning | undefined;
 }
 
 interface TimedAction {
@@ -177,6 +179,7 @@ export type GameAction =
   | (TimedAction & { type: "AUDIT_ERROR"; message: string })
   | (TimedAction & { type: "NATIONAL_LENS"; census: NationalCensus | undefined })
   | (TimedAction & { type: "NATIONAL_LENS_V4"; census: DataGovV4Census | undefined })
+  | (TimedAction & { type: "CENSUS_MEANING"; census: CensusMeaning | undefined })
   | (TimedAction & { type: "FINISH_AUDIT" })
   | (TimedAction & { type: "PRUNE" })
   | (TimedAction & { type: "STOP" });
@@ -202,6 +205,7 @@ export function createInitialState(runtimeMode: RuntimeMode): GameState {
     globalContextVisible: true,
     nationalCensus: undefined,
     nationalCensusV4: undefined,
+    censusMeaning: undefined,
   };
 }
 
@@ -459,6 +463,8 @@ export function gameReducer(input: GameState, action: GameAction): GameState {
       return withRevision(state, { nationalCensus: action.census });
     case "NATIONAL_LENS_V4":
       return withRevision(state, { nationalCensusV4: action.census });
+    case "CENSUS_MEANING":
+      return withRevision(state, { censusMeaning: action.census });
     case "FINISH_AUDIT":
       return withRevision(state, {
         ...clearTransient(),

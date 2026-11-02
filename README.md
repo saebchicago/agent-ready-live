@@ -28,6 +28,7 @@ Open <http://127.0.0.1:3000> in a browser or an OBS Browser Source. In the termi
 | `!fix` | Post a sampled fix-it suggestion, when available | Modeled |
 | `!national` | Summarize the recorded Data.gov national catalog facets | Verified |
 | `!publisher <name>` | Show a publisher count from the recorded organization facet | Verified |
+| `!trap` | Show the Census sentinel-value trap and corrected sample list | Modeled until a Census fixture is recorded |
 | `!whois` | Identify the demo bot | Modeled |
 | `!stop` | Stop queued audits, available to a broadcaster or moderator in Twitch mode | Verified |
 
@@ -38,6 +39,8 @@ The demo also plays these recorded rounds: Wikipedia, Boston, NYC, Detroit, Mich
 To create the local national-catalog fixture, a maintainer can run `npm run record -- datagov`. This makes one robots request and up to two package search calls. The recorder sanitizes cookie headers. ArcGIS Hub is terms-gated and sends zero requests; Detroit's portal platform terms question remains unresolved, as described in [docs/TOS-REVIEW.md](docs/TOS-REVIEW.md).
 
 The recorded Data.gov legacy CKAN 404 is shown as evidence that agents using stale endpoint documentation can fail. To record the v4 census, run `npm run record -- datagov-v4`. The recorder uses `DATAGOV_API_KEY` only in the `X-Api-Key` request header, makes one organizations call and up to five publisher searches, and omits request headers and the key from fixtures. National publisher/type totals are **Verified** from the organizations response. License shares are **Modeled** from the returned sample of up to 100 records per publisher.
+
+**Verified:** `census-wayne` uses one ACS 5-year 2024 Wayne County tract request after checking `robots.txt`. Run `npm run record -- census-wayne` to save a local fixture. Set `CENSUS_API_KEY` in the maintainer environment; the key is used only for the API request and is removed from ticker events and recorded URLs. The offline demo includes a clearly labeled synthetic Census response until a recording exists. It shows Census sentinel values as missing with reasons, compares the naive raw sort with the corrected income and margin-of-error list, and displays the required Census Bureau notice. The counts and values shown come from the fixture.
 
 **Verified:** the ArcGIS Hub terms card says, “Publisher says open. Platform says no AI harvesting.” It shows the configured publisher DCAT-US route as a side door, without making a request to ArcGIS Hub.
 

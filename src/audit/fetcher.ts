@@ -107,6 +107,7 @@ export interface AuditSession {
   robots(): Promise<RobotsPolicy>;
   request(url: string | URL, method: HttpMethod): Promise<FetchResponse>;
   requestWithApiKey(url: string | URL, key: string): Promise<FetchResponse>;
+  requestWithCensusKey(url: string | URL, key: string): Promise<FetchResponse>;
 }
 
 export interface Fetcher {
@@ -191,6 +192,7 @@ function delay(ms: number): Promise<void> {
 function budgetFor(mode: TargetMode): number {
   if (mode === "knock") return 2;
   if (mode === "catalog-census-v4") return 7;
+  if (mode === "meaning") return 2;
   if (mode === "catalog-census") return 3;
   return 3;
 }
@@ -210,7 +212,7 @@ function recorded(response: FetchResponse, truncated = false): RecordedExchange 
     Object.entries(response.headers).filter(([name]) => !["cookie", "set-cookie"].includes(name.toLowerCase())),
   );
   return {
-    url: response.url,
+    url: safeFixtureUrl(response.url),
     method: response.method,
     status: response.status,
     headers,
@@ -220,6 +222,18 @@ function recorded(response: FetchResponse, truncated = false): RecordedExchange 
     ms: response.ms,
     ...(truncated ? { truncated: true } : {}),
   };
+}
+
+function safeFixtureUrl(input: string): string {
+  const url = new URL(input);
+  if (url.hostname === "api.census.gov" && url.searchParams.has("key")) url.searchParams.delete("key");
+  return url.toString();
+}
+
+function safeEventPath(url: URL): string {
+  const safe = new URL(url);
+  if (safe.hostname === "api.census.gov") safe.searchParams.delete("key");
+  return `${safe.pathname}${safe.search}`;
 }
 
 function isFirewallPage(response: FetchResponse): boolean {
@@ -536,10 +550,30 @@ class GuardedSession implements AuditSession {
     return await this.requestWithHeaders(url, "GET", { "X-Api-Key": key });
   }
 
+  async requestWithCensusKey(input: string | URL, key: string): Promise<FetchResponse> {
+    const target = this.options.target;
+    const url = input instanceof URL ? new URL(input) : new URL(input);
+    const expectedGet = "NAME,B19013_001E,B19013_001M,B11001_001E";
+    if (
+      target.alias !== "census-wayne" || target.host !== "api.census.gov" || target.mode !== "meaning" ||
+      url.protocol !== "https:" || url.hostname !== target.host || url.pathname !== "/data/2024/acs/acs5" ||
+      url.searchParams.get("get") !== expectedGet || url.searchParams.get("for") !== "tract:*" ||
+      url.searchParams.get("in") !== "state:26 county:163" || url.searchParams.has("key") || key.trim().length === 0 ||
+      url.searchParams.getAll("get").length !== 1 || url.searchParams.getAll("for").length !== 1 ||
+      url.searchParams.getAll("in").length !== 1 || [...url.searchParams.keys()].length !== 3 ||
+      [...url.searchParams.keys()].some((name) => !["get", "for", "in"].includes(name))
+    ) {
+      throw new FetcherError("API_KEY_TARGET_NOT_ALLOWED", "Census API key requests are restricted to the configured Wayne County ACS request");
+    }
+    url.searchParams.set("key", key);
+    return await this.requestWithHeaders(url, "GET", {}, true);
+  }
+
   private async requestWithHeaders(
     input: string | URL,
     method: HttpMethod,
     headers: Readonly<Record<string, string>>,
+    sensitiveCensusKey = false,
   ): Promise<FetchResponse> {
     if (method !== "GET" && method !== "HEAD") {
       throw new FetcherError("METHOD_NOT_ALLOWED", `Method ${String(method)} is not allowed`);
@@ -555,12 +589,15 @@ class GuardedSession implements AuditSession {
       );
     }
     const url = input instanceof URL ? new URL(input) : new URL(input);
+    if (this.options.target.mode === "meaning" && !sensitiveCensusKey) {
+      throw new FetcherError("API_KEY_TARGET_NOT_ALLOWED", "Census API requests must use the restricted key method");
+    }
     assertAllowedUrl(url, this.options.target);
     if (!policy.isAllowed(url.toString())) {
       this.ended = true;
       throw new FetcherError("ROBOTS_DISALLOWED", `robots.txt disallows ${url.pathname}`);
     }
-    return await this.serialRequest(() => this.follow(url, method, false, headers));
+    return await this.serialRequest(() => this.follow(url, method, false, headers, sensitiveCensusKey));
   }
 
   private async serialRequest<T>(operation: () => Promise<T>): Promise<T> {
@@ -601,6 +638,7 @@ class GuardedSession implements AuditSession {
     method: HttpMethod,
     retrievingRobots: boolean,
     headers: Readonly<Record<string, string>> = {},
+    sensitiveCensusKey = false,
   ): Promise<FetchResponse> {
     if (!retrievingRobots && this.ended) {
       throw new FetcherError("AUDIT_ALREADY_ENDED", "The audit stopped after a terminal response");
@@ -613,6 +651,9 @@ class GuardedSession implements AuditSession {
         this.options.target.alias !== "datagov-v4" || this.options.target.host !== "api.gsa.gov"
       )) {
         throw new FetcherError("API_KEY_REDIRECT_BLOCKED", "API key redirect left the configured Data.gov endpoint");
+      }
+      if (sensitiveCensusKey && (url.origin !== initialUrl.origin || url.pathname !== initialUrl.pathname)) {
+        throw new FetcherError("API_KEY_REDIRECT_BLOCKED", "Census API key redirect left the configured endpoint");
       }
       if (!retrievingRobots && this.policy !== undefined && !this.policy.isAllowed(url.toString())) {
         this.ended = true;
@@ -647,7 +688,7 @@ class GuardedSession implements AuditSession {
         this.options.onEvent({
           type: "request",
           method,
-          path: `${url.pathname}${url.search}`,
+          path: safeEventPath(url),
           status: error instanceof FetcherError && error.partialResponse !== undefined
             ? error.partialResponse.status
             : "UNREACHABLE",
@@ -660,7 +701,7 @@ class GuardedSession implements AuditSession {
       this.options.onEvent({
         type: "request",
         method,
-        path: `${url.pathname}${url.search}`,
+        path: safeEventPath(url),
         status: response.status,
         ms: response.ms,
       });
@@ -672,6 +713,7 @@ class GuardedSession implements AuditSession {
       }
       const location = response.headers.location;
       if (location === undefined || redirects === 3) return response;
+      if (sensitiveCensusKey) return response;
       url = new URL(location, url);
     }
     throw new Error("Unreachable redirect state");
@@ -837,10 +879,10 @@ export class ReplayFetcher implements Fetcher {
         next: async (url, method) => {
           const exchange = recording.exchanges[index];
           index += 1;
-          if (exchange === undefined || exchange.url !== url.toString() || exchange.method !== method) {
+          if (exchange === undefined || exchange.url !== safeFixtureUrl(url.toString()) || exchange.method !== method) {
             throw new FetcherError(
               "REPLAY_MISMATCH",
-              `Recording does not contain ${method} ${url.toString()} at exchange ${index}`,
+              `Recording does not contain ${method} ${safeFixtureUrl(url.toString())} at exchange ${index}`,
             );
           }
           const body = Buffer.from(exchange.body, exchange.bodyEncoding);
@@ -924,7 +966,7 @@ export function parseRecording(value: unknown): AuditRecording {
   if (
     input.schemaVersion !== 1 ||
     typeof input.alias !== "string" ||
-    (input.mode !== "knock" && input.mode !== "audit" && input.mode !== "catalog-census" && input.mode !== "catalog-census-v4") ||
+    (input.mode !== "knock" && input.mode !== "audit" && input.mode !== "catalog-census" && input.mode !== "catalog-census-v4" && input.mode !== "meaning") ||
     typeof input.recordedAt !== "string" ||
     !Array.isArray(input.exchanges)
   ) {

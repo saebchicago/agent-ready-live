@@ -25,6 +25,7 @@ describe("P5 explanation cards and door ladder", () => {
       twitch: "Closed by terms", samgov: "Closed by terms",
       datagov: "Open with gaps", "arcgis-hub": "Closed by terms",
       "datagov-v4": "Open with gaps",
+      "census-wayne": "Open with gaps",
     };
     expect(DOOR_LADDER).toHaveLength(5);
     for (const target of targets) {

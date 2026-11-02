@@ -59,12 +59,13 @@ describe("game command routing", () => {
       fix: () => "D3 fix-it",
       national: () => "National lens: 100 datasets. Probed 2026-11-02 | Not a ranking.",
       publisher: (name: string) => `${name}: 8. Probed 2026-11-02 | Not a ranking.`,
+      trap: () => "Census notice and corrected sample trap.",
       stop() { this.stopped += 1; },
     };
     return game;
   }
 
-  it("routes knocks, audits, bets, score, board, why, fix, national, and publisher", () => {
+  it("routes knocks, audits, bets, score, board, why, fix, national, publisher, and trap", () => {
     let now = 0;
     const game = fakeGame();
     const router = new CommandRouter({
@@ -93,6 +94,8 @@ describe("game command routing", () => {
     expect(router.handle({ userId: "u1", userLogin: "consented", text: "!national" })).toContain("100 datasets");
     now += 1_000;
     expect(router.handle({ userId: "u1", userLogin: "consented", text: "!publisher Michigan" })).toContain("Michigan: 8");
+    now += 1_000;
+    expect(router.handle({ userId: "u1", userLogin: "consented", text: "!trap" })).toContain("Census notice");
   });
 
   it("allows only a moderator or broadcaster to engage the kill switch", () => {
